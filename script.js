@@ -284,36 +284,128 @@ class RomanticRoulette {
                 segmentGradient.addColorStop(0, '#FFFFFF');
                 segmentGradient.addColorStop(0.3, color);
             }
-            segmentGradient.addColorStop(1, color);
-            this.ctx.fillStyle = segmentGradient;
+            this.ctx.fillStyle = color;
             this.ctx.fill();
             
-            // Add sparkle effect border
-            this.ctx.strokeStyle = 'white';
-            this.ctx.lineWidth = 4;
-            this.ctx.stroke();
-            
-            // Add inner shadow for depth
-            this.ctx.beginPath();
-            this.ctx.arc(0, 0, radius - 8, startAngle, endAngle);
-            this.ctx.lineTo(0, 0);
-            this.ctx.strokeStyle = 'rgba(0,0,0,0.1)';
-            this.ctx.lineWidth = 2;
+            // Add border
+            this.ctx.strokeStyle = '#000000';
+            this.ctx.lineWidth = 3;
             this.ctx.stroke();
 
-            // Draw text - Show actual options
-            if (this.wheelType !== 'mystery') {
+            // Draw text
+            if (this.wheelType !== 'mystery' || this.options.length > 0) {
                 this.ctx.save();
                 this.ctx.rotate(startAngle + anglePerSegment / 2);
                 this.ctx.textAlign = 'center';
                 this.ctx.textBaseline = 'middle';
                 
-                // Beautiful text styling
-                const fontSize = Math.max(16, Math.min(24, radius * 0.08));
-                this.ctx.font = `bold ${fontSize}px 'Poppins', sans-serif`;
+                // Text styling - better sizing and positioning
+                const fontSize = Math.max(14, Math.min(20, 300 / segments));
+                this.ctx.font = `bold ${fontSize}px Arial, sans-serif`;
                 
-                // White text with dark outline for maximum contrast
-                this.ctx.fillStyle = '#FFFFFF';
+                // High contrast text
+                const textColor = color === '#ffffff' ? '#000000' : '#ffffff';
+                const outlineColor = color === '#ffffff' ? '#ffffff' : '#000000';
+                
+                this.ctx.fillStyle = textColor;
+                this.ctx.strokeStyle = outlineColor;
+                this.ctx.lineWidth = 2;
+                
+                // Position text closer to edge but within bounds
+                const textRadius = radius * 0.65;
+                
+                const text = this.wheelType === 'mystery' ? '🎁' : this.options[i];
+                
+                if (this.wheelType === 'mystery') {
+                    // Mystery icon
+                    this.ctx.font = `${fontSize * 1.5}px Arial`;
+                    this.ctx.fillText('🎁', textRadius, 0);
+                } else {
+                    // Regular text - handle long text
+                    const maxLength = Math.max(20, 50 - segments * 2);
+                    
+                    if (text.length <= maxLength) {
+                        this.ctx.strokeText(text, textRadius, 0);
+                        this.ctx.fillText(text, textRadius, 0);
+                    } else {
+                        // Split into two lines
+                        const words = text.split(' ');
+                        const midPoint = Math.ceil(words.length / 2);
+                        const line1 = words.slice(0, midPoint).join(' ');
+                        const line2 = words.slice(midPoint).join(' ');
+                        
+                        const lineHeight = fontSize * 0.8;
+                        
+                        this.ctx.strokeText(line1, textRadius, -lineHeight / 2);
+                        this.ctx.fillText(line1, textRadius, -lineHeight / 2);
+                        
+                        if (line2) {
+                            this.ctx.strokeText(line2, textRadius, lineHeight / 2);
+                            this.ctx.fillText(line2, textRadius, lineHeight / 2);
+                        }
+                    }
+                }
+                
+                this.ctx.restore();
+            }
+        }
+
+        this.ctx.restore();
+
+        // Draw center
+        this.ctx.beginPath();
+        this.ctx.arc(centerX, centerY, 40, 0, 2 * Math.PI);
+        this.ctx.fillStyle = '#e30052';
+        this.ctx.fill();
+        this.ctx.strokeStyle = '#000000';
+        this.ctx.lineWidth = 4;
+        this.ctx.stroke();
+        
+        // Center text
+        this.ctx.textAlign = 'center';
+        this.ctx.textBaseline = 'middle';
+        this.ctx.font = '24px Arial';
+        this.ctx.fillStyle = '#ffffff';
+        this.ctx.fillText('💕', centerX, centerY);
+    }
+
+    drawEmptyWheel() {
+        if (!this.ctx) return;
+        
+        const centerX = 300;
+        const centerY = 300;
+        const radius = 250;
+        
+        this.ctx.clearRect(0, 0, 600, 600);
+        
+        // Draw empty circle
+        this.ctx.beginPath();
+        this.ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+        this.ctx.fillStyle = '#ffffff';
+        this.ctx.fill();
+        this.ctx.strokeStyle = '#e30052';
+        this.ctx.lineWidth = 6;
+        this.ctx.stroke();
+        
+        // Draw message
+        this.ctx.fillStyle = '#000000';
+        this.ctx.font = 'bold 24px Arial';
+        this.ctx.textAlign = 'center';
+        this.ctx.fillText('Agrega opciones', centerX, centerY - 15);
+        this.ctx.fillText('románticas 💕', centerX, centerY + 15);
+        
+        // Draw center
+        this.ctx.beginPath();
+        this.ctx.arc(centerX, centerY, 40, 0, 2 * Math.PI);
+        this.ctx.fillStyle = '#e30052';
+        this.ctx.fill();
+        this.ctx.strokeStyle = '#000000';
+        this.ctx.lineWidth = 4;
+        this.ctx.stroke();
+        this.ctx.font = '24px Arial';
+        this.ctx.fillStyle = '#ffffff';
+        this.ctx.fillText('💕', centerX, centerY);
+    }
                 this.ctx.strokeStyle = '#000000';
                 this.ctx.lineWidth = 4;
                 this.ctx.shadowColor = 'rgba(0,0,0,1)';
@@ -471,44 +563,16 @@ class RomanticRoulette {
         const randomSpins = 8 + Math.random() * 4; // More spins
         const randomSegment = Math.floor(Math.random() * segments);
         const finalRotation = 360 * randomSpins + (360 - randomSegment * segmentAngle - segmentAngle / 2);
-        
-        // Smooth animation
-        const startTime = Date.now();
-        const duration = 6000; // Slower for better suspense
-        const startRotation = this.rotation;
-        
-        let lastSegment = -1;
-        
-        const animate = () => {
-            const elapsed = Date.now() - startTime;
-            const progress = Math.min(elapsed / duration, 1);
+        // Draw segments
             
             // Smooth easing function - gradual deceleration
             const easeOut = 1 - Math.pow(1 - progress, 3.5);
-            
+            const color = colors[i % colors.length];
             this.rotation = startRotation + (finalRotation - startRotation) * easeOut;
-            
-            // Ensure smooth frame-by-frame rotation
-            this.rotation = this.rotation % 360;
-            this.drawWheel();
+            // Draw segment
             
             // Add tick sound effect when crossing segments
             const currentSegment = Math.floor(((360 - (this.rotation % 360)) / segmentAngle)) % segments;
-            if (currentSegment !== lastSegment && progress > 0.1 && progress < 0.95) {
-                this.playTickSound();
-                this.highlightCurrentSegment(currentSegment);
-                lastSegment = currentSegment;
-            }
-            
-            if (progress < 1) {
-                requestAnimationFrame(animate);
-            } else {
-                pointer.classList.remove('spinning');
-                this.showResult(randomSegment);
-                this.isSpinning = false;
-                spinBtn.disabled = false;
-                spinBtn.textContent = '🎯 Girar Ruleta';
-            }
         };
         
         animate();
