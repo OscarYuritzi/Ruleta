@@ -1,654 +1,1314 @@
-import { supabase, getUserSession, updateSpinningState, getActiveSessions, removeUserSession } from './src/supabase.js';
-
-class WheelApp {
+class RomanticRoulette {
     constructor() {
-        this.currentUser = null;
-        this.userSession = null;
-        this.realtimeChannel = null;
+        this.currentWheel = null;
+        this.wheelType = null;
+        this.options = [];
         this.canvas = null;
         this.ctx = null;
         this.isSpinning = false;
-        this.currentAngle = 0;
-        this.options = [];
-        this.wheelType = null;
-        this.colors = ['#e30070', '#ff6b9d', '#c44569', '#f8b500', '#4facfe', '#00f2fe', '#43e97b', '#38f9d7', '#ff9a9e', '#fecfef'];
-        this.lastResultShown = null;
+        this.rotation = 0;
+        this.savedWheels = JSON.parse(localStorage.getItem('romanticWheels')) || [];
+        
+        // Romantic surprise wheel content
+        this.surpriseContent = {
+            romantic_questions: [
+                "¿Cuál es tu recuerdo más romántico conmigo? 💕",
+                "¿Qué es lo que más extrañas de mí? 😢💗",
+                "¿Cuál fue el momento en que supiste que me amabas? 😍",
+                "¿Qué harías si estuviéramos juntos ahora mismo? 🤗",
+                "¿Cuál es tu fantasía romántica favorita? 💭❤️",
+                "¿Qué parte de mi cuerpo es tu favorita? 😏💕",
+                "¿Cómo imaginas nuestra primera cita después de vernos? 🌹",
+                "¿Qué canción te recuerda a mí? 🎵💓"
+            ],
+            virtual_challenges: [
+                "Envía una foto tuya sonriendo ahora mismo 📸😊",
+                "Graba un audio diciéndome 'te amo' en 3 idiomas 🗣️❤️",
+                "Haz una videollamada de 5 minutos solo mirándonos 👀💕",
+                "Escribe un poema corto sobre nosotros 📝💗",
+                "Canta mi canción favorita por videollamada 🎤🎵",
+                "Baila algo sensual para mí por video 💃✨",
+                "Cuenta hasta 100 pero solo números que te recuerden a mí 🔢💕",
+                "Dibuja nuestro futuro juntos y envíamelo 🎨👫"
+            ],
+            romantic_activities: [
+                "Vamos a ver una película juntos por videollamada 🎬💕",
+                "Cocinemos algo al mismo tiempo, cada uno en su casa 👨‍🍳👩‍🍳",
+                "Hagamos una sesión de fotos virtual 📷✨",
+                "Planifiquemos nuestro próximo encuentro 🗓️❤️",
+                "Juguemos verdad o reto romántico 🎯💗",
+                "Escuchemos música romántica juntos 🎵💕",
+                "Contémonos secretos que nadie más sabe 🤫💓",
+                "Hagamos planes para cuando vivamos juntos 🏠👫"
+            ],
+            sweet_exchanges: [
+                "Intercambiemos 5 fotos de nuestra infancia 👶📱",
+                "Enviémonos notas de voz diciendo por qué nos amamos 🎙️❤️",
+                "Compartamos una selfie haciendo la misma pose 🤳💕",
+                "Mandémonos fotos de nuestro lugar favorito de la casa 🏡📸",
+                "Intercambiemos capturas de pantalla de chats antiguos 💬💗",
+                "Enviémonos una foto de algo que nos recuerda al otro 💭📷",
+                "Mandémonos un video corto de nuestro día 🎥🌅",
+                "Intercambiemos una foto de lo que estamos comiendo 🍽️😋"
+            ]
+        };
+        
+        // Stickers/emojis para la ruleta sorpresa (solo se muestran estos)
+        this.surpriseStickers = [
+            "💕", "💖", "💗", "💝", "💘", "💓", "💞", "💜",
+            "🌟", "✨", "🎁", "🌹", "🦋", "🌈", "💎", "👑",
+            "🍓", "🎈", "🎀", "🌸", "🌺", "🎉", "🎊", "🎆",
+            "🌙", "⭐", "💐", "🎯", "🍰", "🧸", "💌", "🎵"
+        ];
         
         this.init();
     }
 
-    async init() {
-        console.log('🚀 Iniciando WheelApp...');
+    init() {
+        this.setupEventListeners();
+        this.loadSavedWheels();
+        this.startParticleSystem();
         
-        // Verificar conexión Supabase
-        if (!supabase) {
-            console.error('❌ Supabase no configurado');
-            alert('Error: Base de datos no configurada. Por favor configura Supabase.');
-            return;
-        }
-
-        this.setupUI();
-        this.createParticles();
+        // Pedir nombre de usuario al iniciar
+        this.requestUserName();
         
-        // Obtener nombre de usuario
-        await this.getUsername();
-        
-        // Configurar Realtime
-        await this.setupRealtimeSubscription();
-        
-        console.log('✅ WheelApp inicializado correctamente');
-    }
-
-    async getUsername() {
-        let username = localStorage.getItem('wheelapp_username');
-        
-        if (!username) {
-            username = prompt('¡Hola! 👋\n\nPor favor ingresa tu nombre para sincronizar con otros usuarios:');
-            
-            if (!username || username.trim() === '') {
-                username = `Usuario_${Math.random().toString(36).substr(2, 6)}`;
+        // Agregar event listener para resize
+        window.addEventListener('resize', () => {
+            if (this.canvas && this.ctx) {
+                setTimeout(() => {
+                    this.initCanvas();
+                    this.drawWheel();
+                }, 100);
             }
+        });
+    }
+
+    async requestUserName() {
+        while (!this.userName) {
+            const name = prompt('¡Bienvenido a las Ruletas del Amor! 💕\n\n¿Cómo te llamas? (Los demás usuarios podrán verte cuando gires una ruleta)');
             
-            username = username.trim();
-            localStorage.setItem('wheelapp_username', username);
+            const { getUserSession } = await import('./src/supabase.js');
+            if (name && name.trim().length > 0) {
+                this.userName = name.trim();
+                
+                // Crear sesión en Supabase
+                this.initRealtimeConnection();
+                try {
+                    const { data, error } = await getUserSession(this.userName);
+                    if (data && !error) {
+                        this.currentSession = data;
+                        this.showWelcomeMessage();
+                    } else {
+                        alert('Error de conexión. Por favor conecta Supabase primero.');
+                        alert('Error conectando con el servidor. Intenta recargar la página.');
+                    }
+                } catch (error) {
+                    console.error('Error with Supabase:', error);
+                    alert('Error de conexión. Verifica que Supabase esté configurado correctamente.');
+                }
+            }
         }
+    }
+
+    showWelcomeMessage() {
+        // Crear mensaje de bienvenida
+        const welcomeDiv = document.createElement('div');
+        welcomeDiv.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(145deg, #e30070, #cc0066);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(227, 0, 112, 0.3);
+            z-index: 1001;
+            font-weight: 600;
+            animation: slideInRight 0.5s ease-out;
+        `;
+        welcomeDiv.innerHTML = `¡Hola ${this.userName}! 💕<br><small>Otros usuarios podrán verte cuando gires</small>`;
         
-        this.currentUser = username;
-        console.log(`👤 Usuario: ${this.currentUser}`);
+        document.body.appendChild(welcomeDiv);
         
-        // Crear/obtener sesión
-        const { data: session, error } = await getUserSession(this.currentUser);
-        if (error) {
-            console.error('❌ Error creando sesión:', error);
+        // Remover después de 5 segundos
+        setTimeout(() => {
+            welcomeDiv.remove();
+        }, 5000);
+    }
+
+    async initRealtimeConnection() {
+        const supabaseModule = await import('./src/supabase.js');
+        if (!supabaseModule.supabase) {
+            console.error('Supabase no está configurado');
             return;
         }
-        
-        this.userSession = session;
-        console.log('✅ Sesión creada:', session.id);
+
+        try {
+            // Limpiar sesiones viejas primero
+            await this.cleanupOldSessions();
+            
+            // Suscribirse a cambios en tiempo real
+            this.realtimeChannel = supabaseModule.supabase
+                .channel('realtime-roulettes')
+                .on('postgres_changes', {
+                    event: '*',
+                    schema: 'public',
+                    table: 'realtime_sessions'
+                }, (payload) => {
+                    console.log('Realtime update received:', payload);
+                    this.handleRealtimeUpdate(payload);
+                })
+                .subscribe();
+
+            // Cargar sesiones activas iniciales
+            await this.loadActiveSessions();
+            
+            // Actualizar cada 5 segundos para sincronización rápida
+            setInterval(() => {
+                this.keepSessionAlive();
+                this.loadActiveSessions(); // También recargar sesiones activas
+            }, 5000);
+
+        } catch (error) {
+            console.error('Error setting up realtime connection:', error);
+        }
     }
 
-    async setupRealtimeSubscription() {
-        if (!supabase) return;
-
-        console.log('🔄 Configurando Realtime...');
-        
-        // Suscripción a cambios en tiempo real
-        this.realtimeChannel = supabase
-            .channel('wheel-sync')
-            .on('postgres_changes', {
-                event: '*',
-                schema: 'public',
-                table: 'realtime_sessions'
-            }, (payload) => {
-                console.log('📡 Cambio recibido:', payload);
-                this.handleRealtimeChange(payload);
-            })
-            .subscribe((status) => {
-                console.log('🔗 Estado Realtime:', status);
-            });
+    async loadActiveSessions() {
+        try {
+            const { getActiveSessions } = await import('./src/supabase.js');
+            const { data, error } = await getActiveSessions();
+            if (data && !error) {
+                this.activeSessions = data;
+                this.updateActiveSessionsDisplay();
+            }
+        } catch (error) {
+            console.error('Error loading active sessions:', error);
+        }
+    }
+    async cleanupOldSessions() {
+        try {
+            const { supabase } = await import('./src/supabase.js');
+            if (!supabase) return;
+            
+            // Eliminar sesiones más viejas de 1 minuto
+            const oneMinuteAgo = new Date(Date.now() - 60 * 1000);
+            await supabase
+                .from('realtime_sessions')
+                .delete()
+                .lt('last_activity', oneMinuteAgo.toISOString());
+        } catch (error) {
+            console.error('Error cleaning up old sessions:', error);
+        }
     }
 
-    handleRealtimeChange(payload) {
+    handleRealtimeUpdate(payload) {
         const { eventType, new: newRecord, old: oldRecord } = payload;
+        console.log('Processing realtime update:', eventType, newRecord);
         
-        console.log(`🔄 Evento: ${eventType}`, newRecord);
+        switch (eventType) {
+            case 'INSERT':
+                if (!this.activeSessions.find(s => s.id === newRecord.id)) {
+                    this.activeSessions.push(newRecord);
+                    console.log('Added new session:', newRecord.user_name);
+                }
+                break;
+            case 'UPDATE':
+                const index = this.activeSessions.findIndex(s => s.id === newRecord.id);
+                if (index > -1) {
+                    this.activeSessions[index] = newRecord;
+                    
+                    console.log('Updated session:', newRecord.user_name, 'spinning:', newRecord.is_spinning);
+                    
+                    // Sincronizar con otros usuarios inmediatamente (solo si no es nuestra propia sesión)
+                    if (newRecord.id !== this.currentSession?.id) {
+                        console.log('Syncing remote wheel state for:', newRecord.user_name);
+                        this.syncRemoteWheelState(newRecord);
+                    }
+                } else {
+                    // Si no existe, agregarlo
+                    this.activeSessions.push(newRecord);
+                    console.log('Added missing session:', newRecord.user_name);
+                }
+                break;
+            case 'DELETE':
+                this.activeSessions = this.activeSessions.filter(s => s.id !== oldRecord.id);
+                console.log('Removed session:', oldRecord.user_name);
+                break;
+        }
         
-        // Ignorar cambios de nuestra propia sesión
-        if (newRecord && newRecord.id === this.userSession?.id) {
-            console.log('🚫 Ignorando cambio propio');
+        this.updateActiveSessionsDisplay();
+    }
+
+    syncRemoteWheelState(remoteSession) {
+        console.log('syncRemoteWheelState called for:', remoteSession.user_name);
+        console.log('Remote session data:', {
+            is_spinning: remoteSession.is_spinning,
+            wheel_type: remoteSession.wheel_type,
+            options_count: remoteSession.current_options?.length,
+            last_result: remoteSession.last_result
+        });
+        
+        // No sincronizar si estamos girando nosotros mismos
+        if (this.isSpinning) {
+            console.log('Not syncing - we are spinning');
             return;
         }
         
-        // Manejar diferentes eventos
-        if (eventType === 'UPDATE' && newRecord) {
-            this.handleUserUpdate(newRecord);
-        }
-    }
-
-    async handleUserUpdate(session) {
-        console.log('👤 Actualizando desde otro usuario:', session);
-        
-        // Si alguien está girando
-        if (session.is_spinning && !this.isSpinning) {
-            console.log(`🎯 ${session.user_name} está girando...`);
+        // Si alguien más está girando o acaba de girar, sincronizar completamente
+        if (remoteSession.is_spinning && remoteSession.wheel_type && remoteSession.current_options?.length > 0) {
+            console.log('Syncing spinning wheel from:', remoteSession.user_name);
             
-            // Cambiar a la ruleta correspondiente
-            if (session.wheel_type && session.wheel_type !== this.wheelType) {
-                console.log(`🔄 Cambiando a ruleta: ${session.wheel_type}`);
-                this.switchToWheel(session.wheel_type, session.current_options || []);
+            // Cambiar a la pantalla de la ruleta si no estamos ahí
+            const wheelSelection = document.getElementById('wheel-selection');
+            const wheelCreator = document.getElementById('wheel-creator');
+            
+            if (!wheelSelection.classList.contains('hidden')) {
+                console.log('Switching to wheel creator view');
+                wheelSelection.classList.add('hidden');
+                wheelCreator.classList.remove('hidden');
             }
             
-            // Mostrar indicador de giro
-            this.showSpinningIndicator(session.user_name);
+            const wasOnSameType = this.wheelType === remoteSession.wheel_type;
             
-            // Sincronizar rotación si está disponible
-            if (session.wheel_rotation) {
-                this.syncWheelRotation(session.wheel_rotation);
+            if (!wasOnSameType) {
+                console.log('Switching wheel type to:', remoteSession.wheel_type);
+                // Cambiar al tipo de ruleta que está girando
+                this.wheelType = remoteSession.wheel_type;
+                this.setupWheelType(remoteSession.wheel_type);
             }
+            
+            // Sincronizar opciones y rotación
+            this.options = [...remoteSession.current_options];
+            console.log('Synced options:', this.options.length);
+            
+            // Asegurarse de que el canvas esté inicializado
+            if (!this.canvas) {
+                this.initCanvas();
+            }
+            
+            this.updateDisplay();
+            
+            // Animar rotación con más fluidez
+            this.animateToRotation(remoteSession.wheel_rotation);
+            
+            // Mostrar indicador visual
+            this.showRemoteSpinIndicator(remoteSession.user_name);
         }
         
-        // Si terminó de girar y hay resultado
-        if (!session.is_spinning && session.last_result && 
-            session.last_result !== this.lastResultShown) {
-            console.log(`🎉 ${session.user_name} obtuvo: ${session.last_result}`);
-            this.showOtherUserResult(session.user_name, session.last_result);
-            this.lastResultShown = session.last_result;
-        }
-    }
-
-    switchToWheel(wheelType, options = []) {
-        console.log(`🔄 Cambiando a ruleta: ${wheelType}`);
-        
-        this.wheelType = wheelType;
-        this.options = options;
-        
-        // Ocultar selección y mostrar creator
-        document.getElementById('wheel-selection').classList.add('hidden');
-        document.getElementById('wheel-creator').classList.remove('hidden');
-        
-        // Actualizar título
-        const titles = {
-            'mystery': 'Ruleta Misteriosa 🎁',
-            'normal': 'Ruleta Normal 🎀',
-            'surprise': 'Ruleta Sorpresa 💗'
-        };
-        
-        document.getElementById('creator-title').textContent = titles[wheelType] || 'Ruleta';
-        
-        // Si es mystery o surprise, usar opciones predefinidas
-        if (wheelType === 'mystery') {
-            this.options = this.getMysteryOptions();
-        } else if (wheelType === 'surprise') {
-            this.options = this.getSurpriseOptions();
-        }
-        
-        // Actualizar UI
-        this.updateOptionsDisplay();
-        this.drawWheel();
-    }
-
-    showSpinningIndicator(userName) {
-        // Mostrar indicador en el botón
-        const spinBtn = document.getElementById('spin-btn');
-        if (spinBtn) {
-            spinBtn.textContent = `🎯 ${userName} está girando...`;
-            spinBtn.disabled = true;
-        }
-        
-        // Agregar clase de spinning al pointer
-        const pointer = document.querySelector('.wheel-pointer');
-        if (pointer) {
-            pointer.classList.add('spinning');
+        // Mostrar resultado cuando termine de girar
+        if (!remoteSession.is_spinning && remoteSession.last_result && this.lastSyncedResult !== remoteSession.last_result) {
+            console.log('Showing remote result:', remoteSession.last_result);
+            this.lastSyncedResult = remoteSession.last_result;
+            this.showRemoteResult(remoteSession.user_name, remoteSession.last_result);
         }
     }
-
-    syncWheelRotation(rotation) {
-        if (this.canvas) {
-            // Aplicar rotación visual suave
-            this.currentAngle = rotation;
-            this.drawWheel();
+    
+    setupWheelType(type) {
+        const title = document.getElementById('creator-title');
+        const optionsPanel = document.getElementById('options-panel');
+        
+        switch (type) {
+            case 'mystery':
+                title.textContent = 'Ruleta Misteriosa 🎁✨';
+                optionsPanel.style.display = 'block';
+                break;
+            case 'normal':
+                title.textContent = 'Ruleta Normal 🎀💕';
+                optionsPanel.style.display = 'block';
+                break;
+            case 'surprise':
+                title.textContent = 'Ruleta Sorpresa 💗🌟';
+                optionsPanel.style.display = 'none';
+                break;
         }
     }
-
-    showOtherUserResult(userName, result) {
-        console.log(`🎉 Mostrando resultado de ${userName}: ${result}`);
+    
+    showRemoteSpinIndicator(userName) {
+        // Crear indicador visual de que alguien más está girando
+        let indicator = document.getElementById('remote-spin-indicator');
+        if (!indicator) {
+            indicator = document.createElement('div');
+            indicator.id = 'remote-spin-indicator';
+            indicator.style.cssText = `
+                position: absolute;
+                top: 10px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: rgba(227, 0, 112, 0.9);
+                color: white;
+                padding: 8px 15px;
+                border-radius: 20px;
+                font-weight: 600;
+                z-index: 100;
+                animation: pulse 1s ease-in-out infinite;
+            `;
+            document.querySelector('.wheel-container').appendChild(indicator);
+        }
         
-        // Crear y mostrar modal de resultado
-        const modal = document.createElement('div');
-        modal.className = 'result-notification';
-        modal.innerHTML = `
-            <div class="notification-content">
-                <div class="notification-header">
-                    <h3>🎉 ¡Resultado!</h3>
-                </div>
-                <div class="notification-body">
-                    <div class="notification-user">👤 ${userName}</div>
-                    <div class="notification-result">${result}</div>
-                </div>
+        indicator.textContent = `🎯 ${userName} está girando...`;
+        
+        // Remover después de 8 segundos
+        clearTimeout(this.indicatorTimeout);
+        this.indicatorTimeout = setTimeout(() => {
+            if (indicator) indicator.remove();
+        }, 8000);
+    }
+    
+    showRemoteResult(userName, result) {
+        console.log('Showing remote result modal for:', userName, result);
+        // Crear notificación de resultado remoto
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.95);
+            backdrop-filter: blur(10px);
+            color: white;
+            padding: 30px 40px;
+            border-radius: 20px;
+            border: 2px solid #e30070;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            z-index: 1001;
+            text-align: center;
+            max-width: 400px;
+            min-width: 300px;
+            animation: fadeInScale 0.5s ease-out;
+        `;
+        
+        notification.innerHTML = `
+            <div style="font-weight: 700; color: #e30070; margin-bottom: 15px; font-size: 1.2rem;">
+                🎉 Resultado de ${userName}:
+            </div>
+            <div style="font-size: 1.3rem; margin-bottom: 15px; font-weight: 600; line-height: 1.4;">
+                ${result}
+            </div>
+            <div style="font-size: 0.9rem; opacity: 0.8; color: #ffccdd;">
+                ✨ Resultado sincronizado ✨
             </div>
         `;
         
-        document.body.appendChild(modal);
+        document.body.appendChild(notification);
         
-        // Mostrar con animación
-        setTimeout(() => modal.classList.add('show'), 100);
-        
-        // Ocultar después de 5 segundos
+        // Remover después de 8 segundos
         setTimeout(() => {
-            modal.classList.remove('show');
-            setTimeout(() => modal.remove(), 300);
-        }, 5000);
-        
-        // Resetear botón de spin
-        const spinBtn = document.getElementById('spin-btn');
-        if (spinBtn) {
-            spinBtn.textContent = '🎯 Girar Ruleta';
-            spinBtn.disabled = false;
-        }
-        
-        // Quitar clase spinning
-        const pointer = document.querySelector('.wheel-pointer');
-        if (pointer) {
-            pointer.classList.remove('spinning');
-        }
+            notification.remove();
+        }, 8000);
     }
 
-    setupUI() {
-        // Canvas setup
-        this.canvas = document.getElementById('wheel-canvas');
-        if (this.canvas) {
-            this.ctx = this.canvas.getContext('2d');
-            this.resizeCanvas();
-        }
-
-        // Event listeners
-        this.setupEventListeners();
+    animateToRotation(targetRotation) {
+        if (!this.canvas || this.isSpinning) return;
         
-        // Mostrar selección inicial
-        document.getElementById('wheel-selection').classList.remove('hidden');
-    }
-
-    resizeCanvas() {
-        if (!this.canvas) return;
-        
-        const container = this.canvas.parentElement;
-        const size = Math.min(container.offsetWidth - 40, 600);
-        
-        this.canvas.width = size;
-        this.canvas.height = size;
-        this.canvas.style.width = size + 'px';
-        this.canvas.style.height = size + 'px';
-        
-        this.drawWheel();
-    }
-
-    setupEventListeners() {
-        // Selección de tipo de ruleta
-        document.querySelectorAll('.wheel-card').forEach(card => {
-            card.addEventListener('click', (e) => {
-                const wheelType = card.dataset.type;
-                this.selectWheelType(wheelType);
-            });
-        });
-
-        // Botón volver
-        document.querySelector('.back-btn')?.addEventListener('click', () => {
-            this.showWheelSelection();
-        });
-
-        // Agregar opción
-        document.getElementById('add-option')?.addEventListener('click', () => {
-            this.addOption();
-        });
-
-        // Input enter
-        document.getElementById('option-input')?.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                this.addOption();
-            }
-        });
-
-        // Botones de acción
-        document.getElementById('clear-options')?.addEventListener('click', () => {
-            this.clearOptions();
-        });
-
-        document.getElementById('save-wheel')?.addEventListener('click', () => {
-            this.saveWheel();
-        });
-
-        // Botón girar
-        document.getElementById('spin-btn')?.addEventListener('click', () => {
-            this.spinWheel();
-        });
-
-        // Modal de resultado
-        document.getElementById('spin-again')?.addEventListener('click', () => {
-            this.closeResultModal();
-        });
-
-        document.getElementById('close-result')?.addEventListener('click', () => {
-            this.closeResultModal();
-        });
-
-        // Redimensionar canvas
-        window.addEventListener('resize', () => {
-            this.resizeCanvas();
-        });
-    }
-
-    selectWheelType(type) {
-        console.log(`🎯 Seleccionando ruleta: ${type}`);
-        
-        this.wheelType = type;
-        
-        // Configurar opciones según el tipo
-        if (type === 'mystery') {
-            this.options = this.getMysteryOptions();
-            document.getElementById('options-panel').style.display = 'none';
-        } else if (type === 'surprise') {
-            this.options = this.getSurpriseOptions();
-            document.getElementById('options-panel').style.display = 'none';
-        } else {
-            this.options = [];
-            document.getElementById('options-panel').style.display = 'block';
-        }
-        
-        // Actualizar título
-        const titles = {
-            'mystery': 'Ruleta Misteriosa 🎁',
-            'normal': 'Ruleta Normal 🎀', 
-            'surprise': 'Ruleta Sorpresa 💗'
-        };
-        
-        document.getElementById('creator-title').textContent = titles[type];
-        
-        // Mostrar creator
-        document.getElementById('wheel-selection').classList.add('hidden');
-        document.getElementById('wheel-creator').classList.remove('hidden');
-        
-        // Actualizar UI
-        this.updateOptionsDisplay();
-        this.drawWheel();
-    }
-
-    getMysteryOptions() {
-        return [
-            'Opción 1 🎁', 'Opción 2 🎁', 'Opción 3 🎁', 'Opción 4 🎁',
-            'Opción 5 🎁', 'Opción 6 🎁', 'Opción 7 🎁', 'Opción 8 🎁'
-        ];
-    }
-
-    getSurpriseOptions() {
-        return [
-            'Envía una foto tuya 📸',
-            'Cuenta tu mejor recuerdo juntos 💕',
-            'Dile 3 cosas que amas de él/ella ❤️',
-            'Canta una canción romántica 🎵',
-            'Escribe un poema de amor 📝',
-            'Planifica una cita virtual 🌹',
-            'Comparte tu sueño más romántico 💭',
-            'Di por qué eres afortunado/a de tenerle 🍀'
-        ];
-    }
-
-    addOption() {
-        const input = document.getElementById('option-input');
-        const text = input.value.trim();
-        
-        if (text) {
-            this.options.push(text);
-            input.value = '';
-            this.updateOptionsDisplay();
-            this.drawWheel();
-        }
-    }
-
-    updateOptionsDisplay() {
-        const optionsList = document.getElementById('options-list');
-        if (!optionsList) return;
-        
-        optionsList.innerHTML = '';
-        
-        this.options.forEach((option, index) => {
-            const optionDiv = document.createElement('div');
-            optionDiv.className = 'option-item';
-            optionDiv.innerHTML = `
-                <span class="option-text">${option}</span>
-                <button class="remove-option" onclick="wheelApp.removeOption(${index})">✕</button>
-            `;
-            optionsList.appendChild(optionDiv);
-        });
-    }
-
-    removeOption(index) {
-        this.options.splice(index, 1);
-        this.updateOptionsDisplay();
-        this.drawWheel();
-    }
-
-    clearOptions() {
-        this.options = [];
-        this.updateOptionsDisplay();
-        this.drawWheel();
-    }
-
-    drawWheel() {
-        if (!this.ctx || this.options.length === 0) {
-            // Mostrar círculo vacío
-            if (this.ctx) {
-                const centerX = this.canvas.width / 2;
-                const centerY = this.canvas.height / 2;
-                const radius = Math.min(centerX, centerY) - 10;
-                
-                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-                this.ctx.save();
-                this.ctx.translate(centerX, centerY);
-                
-                this.ctx.beginPath();
-                this.ctx.arc(0, 0, radius, 0, 2 * Math.PI);
-                this.ctx.fillStyle = '#333';
-                this.ctx.fill();
-                this.ctx.strokeStyle = '#e30070';
-                this.ctx.lineWidth = 4;
-                this.ctx.stroke();
-                
-                // Texto
-                this.ctx.fillStyle = '#fff';
-                this.ctx.font = '24px Poppins';
-                this.ctx.textAlign = 'center';
-                this.ctx.fillText('Agrega opciones', 0, 0);
-                
-                this.ctx.restore();
-            }
-            return;
-        }
-        
-        const centerX = this.canvas.width / 2;
-        const centerY = this.canvas.height / 2;
-        const radius = Math.min(centerX, centerY) - 10;
-        const anglePerSegment = (2 * Math.PI) / this.options.length;
-        
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        this.ctx.save();
-        this.ctx.translate(centerX, centerY);
-        this.ctx.rotate(this.currentAngle);
-        
-        this.options.forEach((option, index) => {
-            const startAngle = index * anglePerSegment;
-            const endAngle = startAngle + anglePerSegment;
-            
-            // Dibujar segmento
-            this.ctx.beginPath();
-            this.ctx.arc(0, 0, radius, startAngle, endAngle);
-            this.ctx.lineTo(0, 0);
-            this.ctx.fillStyle = this.colors[index % this.colors.length];
-            this.ctx.fill();
-            this.ctx.strokeStyle = '#000';
-            this.ctx.lineWidth = 2;
-            this.ctx.stroke();
-            
-            // Dibujar texto
-            this.ctx.save();
-            this.ctx.rotate(startAngle + anglePerSegment / 2);
-            this.ctx.textAlign = 'left';
-            this.ctx.textBaseline = 'middle';
-            this.ctx.fillStyle = '#fff';
-            this.ctx.font = `${Math.max(12, radius / 20)}px Poppins`;
-            this.ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
-            this.ctx.shadowBlur = 2;
-            
-            let displayText = option;
-            if (this.wheelType === 'mystery') {
-                displayText = `Opción ${index + 1} 🎁`;
-            }
-            
-            this.ctx.fillText(displayText, radius * 0.3, 0);
-            this.ctx.restore();
-        });
-        
-        this.ctx.restore();
-    }
-
-    async spinWheel() {
-        if (this.isSpinning || this.options.length === 0) return;
-        
-        console.log('🎯 Iniciando giro...');
-        this.isSpinning = true;
-        
-        // Actualizar estado en base de datos
-        await updateSpinningState(
-            this.userSession.id, 
-            true, 
-            this.currentAngle, 
-            this.wheelType, 
-            this.options
-        );
-        
-        // UI feedback
-        const spinBtn = document.getElementById('spin-btn');
-        spinBtn.disabled = true;
-        spinBtn.textContent = '🌀 Girando...';
-        
-        // Animación de giro
-        const spinAngle = Math.random() * 2 * Math.PI + 6 * Math.PI;
-        const finalAngle = this.currentAngle + spinAngle;
-        const duration = 3000 + Math.random() * 2000;
-        
+        const startRotation = this.rotation;
+        const rotationDiff = targetRotation - startRotation;
         const startTime = Date.now();
-        const startAngle = this.currentAngle;
+        const duration = 500; // Más rápido: 0.5 segundos
         
-        const animate = async () => {
+        const animate = () => {
             const elapsed = Date.now() - startTime;
             const progress = Math.min(elapsed / duration, 1);
             
-            // Easing function
-            const easeOut = 1 - Math.pow(1 - progress, 3);
-            this.currentAngle = startAngle + spinAngle * easeOut;
+            // Suavizado más natural
+            const easeOut = 1 - Math.pow(1 - progress, 2);
             
-            // Enviar actualización de rotación
-            if (Math.random() < 0.1) { // 10% de las veces para no saturar
-                await updateSpinningState(
-                    this.userSession.id, 
-                    true, 
-                    this.currentAngle, 
-                    this.wheelType, 
-                    this.options
-                );
-            }
-            
+            this.rotation = startRotation + (rotationDiff * easeOut);
             this.drawWheel();
             
             if (progress < 1) {
                 requestAnimationFrame(animate);
-            } else {
-                await this.finishSpin(finalAngle);
             }
         };
         
         animate();
     }
 
-    async finishSpin(finalAngle) {
-        this.currentAngle = finalAngle;
-        this.isSpinning = false;
+    updateActiveSessionsDisplay() {
+        let activeUsersPanel = document.getElementById('active-users-panel');
         
-        // Calcular resultado
-        const normalizedAngle = (2 * Math.PI - (this.currentAngle % (2 * Math.PI))) % (2 * Math.PI);
-        const segmentAngle = (2 * Math.PI) / this.options.length;
-        const winningIndex = Math.floor(normalizedAngle / segmentAngle) % this.options.length;
-        const result = this.options[winningIndex];
+        if (!activeUsersPanel) {
+            // Crear panel de usuarios activos
+            activeUsersPanel = document.createElement('div');
+            activeUsersPanel.id = 'active-users-panel';
+            activeUsersPanel.style.cssText = `
+                position: fixed;
+                bottom: 20px;
+                left: 20px;
+                background: rgba(0, 0, 0, 0.8);
+                backdrop-filter: blur(10px);
+                border: 1px solid #e30070;
+                border-radius: 15px;
+                padding: 10px 15px;
+                max-width: 200px;
+                z-index: 1000;
+                box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+                color: white;
+                transition: all 0.3s ease;
+                opacity: 0.8;
+            `;
+            document.body.appendChild(activeUsersPanel);
+        }
+
+        // Filtrar sesiones activas (últimos 5 minutos)
+        const now = new Date();
+        const fiveMinutesAgo = new Date(now.getTime() - 5 * 60 * 1000);
         
-        console.log('🎉 Resultado:', result);
+        const recentSessions = this.activeSessions.filter(session => {
+            const lastActivity = new Date(session.last_activity);
+            return lastActivity > fiveMinutesAgo;
+        });
+
+        if (recentSessions.length === 0) {
+            activeUsersPanel.style.display = 'none';
+            return;
+        }
+
+        activeUsersPanel.style.display = 'block';
         
-        // Actualizar estado final en base de datos
-        await updateSpinningState(
-            this.userSession.id, 
-            false, 
-            this.currentAngle, 
-            this.wheelType, 
-            this.options,
-            result
-        );
+        let html = '<div style="font-weight: 600; color: #e30070; margin-bottom: 8px; text-align: center; font-size: 0.9rem;">👥 En línea</div>';
         
-        // Mostrar resultado
-        this.showResult(result);
+        recentSessions.forEach(session => {
+            const isSpinning = session.is_spinning;
+            const isCurrentUser = session.id === this.currentSession?.id;
+            
+            html += `
+                <div style="
+                    display: flex; 
+                    align-items: center; 
+                    padding: 3px 0; 
+                    ${isCurrentUser ? 'background: rgba(227, 0, 112, 0.1); border-radius: 5px; padding: 5px;' : ''}
+                ">
+                    <div style="
+                        width: 8px; 
+                        height: 8px; 
+                        border-radius: 50%; 
+                        background: ${isSpinning ? '#00ff00' : '#e30070'}; 
+                        margin-right: 6px;
+                        ${isSpinning ? 'animation: pulse 1s infinite;' : ''}
+                    "></div>
+                    <span style="flex: 1; font-size: 0.8rem;">
+                        ${session.user_name}${isCurrentUser ? ' (tú)' : ''}
+                    </span>
+                    ${isSpinning ? '<span style="font-size: 0.7rem; color: #00ff00;">🎯</span>' : ''}
+                </div>
+            `;
+        });
         
-        // Resetear botón
+        activeUsersPanel.innerHTML = html;
+    }
+
+    async keepSessionAlive() {
+        if (this.currentSession) {
+            try {
+                const { updateSpinningState } = await import('./src/supabase.js');
+                await updateSpinningState(
+                    this.currentSession.id,
+                    this.isSpinning,
+                    this.rotation,
+                    this.wheelType,
+                    this.options,
+                    null
+                );
+            } catch (error) {
+                console.error('Error keeping session alive:', error);
+            }
+        }
+    }
+
+    setupEventListeners() {
+        // Wheel type selection
+        document.querySelectorAll('.wheel-card').forEach(card => {
+            card.addEventListener('click', (e) => {
+                this.selectWheelType(card.dataset.type);
+            });
+        });
+
+        // Creator actions
+        document.querySelector('.back-btn').addEventListener('click', () => {
+            this.showWheelSelection();
+        });
+
+        document.getElementById('add-option').addEventListener('click', () => {
+            this.addOption();
+        });
+
+        document.getElementById('option-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                this.addOption();
+            }
+        });
+
+        document.getElementById('clear-options').addEventListener('click', () => {
+            this.clearOptions();
+        });
+
+        document.getElementById('save-wheel').addEventListener('click', () => {
+            this.saveWheel();
+        });
+
+        document.getElementById('spin-btn').addEventListener('click', () => {
+            this.spinWheel();
+        });
+
+        // Modal actions
+        document.getElementById('spin-again').addEventListener('click', () => {
+            this.closeModal();
+        });
+
+        document.getElementById('close-result').addEventListener('click', () => {
+            this.closeModal();
+        });
+
+        // Close modal on overlay click
+        document.getElementById('result-modal').addEventListener('click', (e) => {
+            if (e.target === document.getElementById('result-modal')) {
+                this.closeModal();
+            }
+        });
+        
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', () => {
+            this.cleanup();
+        });
+    }
+
+    async cleanup() {
+        if (this.currentSession && this.currentSession.id) {
+            try {
+                const { removeUserSession } = await import('./src/supabase.js');
+                await removeUserSession(this.currentSession.id);
+            } catch (error) {
+                console.error('Error during cleanup:', error);
+            }
+        }
+        
+        if (this.realtimeChannel) {
+            this.realtimeChannel.unsubscribe();
+        }
+    }
+
+    selectWheelType(type) {
+        this.wheelType = type;
+        this.options = [];
+        
+        document.getElementById('wheel-selection').classList.add('hidden');
+        document.getElementById('wheel-creator').classList.remove('hidden');
+        
+        this.initCanvas();
+        
+        const title = document.getElementById('creator-title');
+        const optionsPanel = document.getElementById('options-panel');
+        
+        switch (type) {
+            case 'mystery':
+                title.textContent = 'Ruleta Misteriosa 🎁✨';
+                optionsPanel.style.display = 'block';
+                break;
+            case 'normal':
+                title.textContent = 'Ruleta Normal 🎀💕';
+                optionsPanel.style.display = 'block';
+                break;
+            case 'surprise':
+                title.textContent = 'Ruleta Sorpresa 💗🌟';
+                optionsPanel.style.display = 'none'; // Ocultar panel de opciones
+                this.loadSurpriseContent();
+                break;
+        }
+        
+        this.updateDisplay();
+    }
+
+    loadSurpriseContent() {
+        // Combine all surprise content categories
+        const allContent = [
+            ...this.surpriseContent.romantic_questions,
+            ...this.surpriseContent.virtual_challenges,
+            ...this.surpriseContent.romantic_activities,
+            ...this.surpriseContent.sweet_exchanges
+        ];
+        
+        // Shuffle and select random items
+        this.options = this.shuffleArray(allContent).slice(0, 12);
+        this.updateDisplay();
+        this.drawWheel();
+    }
+
+    initCanvas() {
+        this.canvas = document.getElementById('wheel-canvas');
+        this.ctx = this.canvas.getContext('2d');
+        
+        // Cálculo seguro y responsivo
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+        
+        // Obtener dimensiones reales del contenedor
+        const container = this.canvas.parentElement;
+        const containerRect = container.getBoundingClientRect();
+        
+        // Calcular espacios ocupados
+        const headerHeight = document.querySelector('.header')?.offsetHeight || 120;
+        const spinButtonHeight = 80; // Botón de girar + margin
+        const pointerHeight = 80; // Flecha + margin
+        const extraSpacing = 60; // Espaciado adicional de seguridad
+        
+        // Espacio disponible real
+        const availableHeight = viewportHeight - headerHeight - spinButtonHeight - pointerHeight - extraSpacing;
+        const availableWidth = Math.min(containerRect.width, viewportWidth) - 40; // Padding lateral
+        
+        // Usar el menor para mantener proporción cuadrada
+        const maxSafeSize = Math.min(availableWidth, availableHeight);
+        
+        // Límites responsivos más conservadores
+        let finalSize;
+        if (viewportWidth >= 1024) {
+            // Desktop: máximo 70% del espacio disponible
+            finalSize = Math.min(maxSafeSize * 0.7, 600);
+        } else if (viewportWidth >= 768) {
+            // Tablet: máximo 75% del espacio disponible  
+            finalSize = Math.min(maxSafeSize * 0.75, 500);
+        } else {
+            // Móvil: máximo 80% del espacio disponible
+            finalSize = Math.min(maxSafeSize * 0.8, 380);
+        }
+        
+        // Asegurar que no sea menor que 250px pero tampoco mayor que el viewport
+        finalSize = Math.max(250, Math.min(finalSize, maxSafeSize));
+        
+        // Set actual canvas size for crisp rendering
+        const scale = window.devicePixelRatio || 1;
+        this.canvas.width = finalSize * scale;
+        this.canvas.height = finalSize * scale;
+        this.ctx.scale(scale, scale);
+        
+        // Store canvas size for drawing and set CSS size
+        this.canvasSize = finalSize;
+        this.canvas.style.width = finalSize + 'px';
+        this.canvas.style.height = finalSize + 'px';
+        
+        this.drawWheel();
+    }
+
+    addOption() {
+        const input = document.getElementById('option-input');
+        const text = input.value.trim();
+        
+        if (text && text.length > 0 && this.options.length < 20) {
+            // Clean the text and ensure it's properly formatted
+            const cleanText = text.replace(/\s+/g, ' ').trim();
+            
+            // Check for duplicates
+            if (this.options.includes(cleanText)) {
+                alert('¡Esta opción ya existe! 💕');
+                return;
+            }
+            
+            this.options.push(cleanText);
+            input.value = '';
+            this.updateDisplay();
+            this.drawWheel();
+            
+            // Add some romantic emojis randomly
+            const randomEmojis = ['💕', '✨', '💗', '🌟', '❤️', '💎', '🎉'];
+            this.createParticleEffect(randomEmojis[Math.floor(Math.random() * randomEmojis.length)]);
+        } else if (text.length === 0) {
+            alert('¡Escribe algo romántico para agregar! 💕');
+        }
+    }
+
+    removeOption(index) {
+        this.options.splice(index, 1);
+        this.updateDisplay();
+        this.drawWheel();
+    }
+
+    clearOptions() {
+        this.options = [];
+        this.updateDisplay();
+        this.drawWheel();
+    }
+
+    updateDisplay() {
+        const list = document.getElementById('options-list');
+        list.innerHTML = '';
+        
+        this.options.forEach((option, index) => {
+            const item = document.createElement('div');
+            item.className = 'option-item fade-in';
+            
+            const optionText = this.wheelType === 'mystery' ? `Opción ${index + 1} 🎁` : option;
+            
+            item.innerHTML = `
+                <span class="option-text">${optionText}</span>
+                <button class="remove-option" onclick="roulette.removeOption(${index})">🗑️</button>
+            `;
+            
+            list.appendChild(item);
+        });
+        
+        // Update spin button state
         const spinBtn = document.getElementById('spin-btn');
-        spinBtn.disabled = false;
-        spinBtn.textContent = '🎯 Girar Ruleta';
+        spinBtn.disabled = this.options.length < 2;
+        if (this.options.length >= 2) {
+            spinBtn.textContent = `🎯 Girar ruleta`;
+        } else {
+            spinBtn.textContent = 'Agrega más opciones ✨';
+        }
     }
 
-    showResult(result) {
-        document.getElementById('result-text').textContent = result;
-        document.getElementById('result-modal').classList.add('show');
+    drawWheel() {
+        if (!this.ctx || this.options.length === 0) {
+            this.drawEmptyWheel();
+            return;
+        }
+        
+        const size = this.canvasSize || 800;
+        const centerX = size / 2;
+        const centerY = size / 2;
+        const radius = (size * 0.44); // 44% of canvas size for responsive radius
+        const segments = this.options.length;
+        const anglePerSegment = (2 * Math.PI) / segments;
+        
+        // Colores más suaves y legibles
+        const colors = ['#000000', '#1a0d0f', '#330a0f', '#1f0408'];
+        
+        this.ctx.clearRect(0, 0, 600, 600);
+        this.ctx.save();
+        this.ctx.translate(centerX, centerY);
+        this.ctx.clearRect(-centerX, -centerY, size, size);
+        this.ctx.rotate(this.rotation * Math.PI / 180);
+        
+        // Draw segments
+        for (let i = 0; i < segments; i++) {
+            const startAngle = i * anglePerSegment;
+            const endAngle = (i + 1) * anglePerSegment;
+            const color = colors[i % colors.length];
+            
+            // Draw segment
+            this.ctx.beginPath();
+            this.ctx.arc(0, 0, radius, startAngle, endAngle);
+            this.ctx.lineTo(0, 0);
+            
+            this.ctx.fillStyle = color;
+            this.ctx.fill();
+            
+            // Borde más sutil
+            this.ctx.strokeStyle = '#e30070';
+            this.ctx.lineWidth = 2;
+            this.ctx.stroke();
+
+            // Draw text
+            this.ctx.save();
+            this.ctx.rotate(startAngle + anglePerSegment / 2);
+            this.ctx.textAlign = 'center';
+            this.ctx.textBaseline = 'middle';
+            
+            // Responsive text size based on segments and screen size
+            let baseFontSize = size > 600 ? 20 : size > 400 ? 16 : 14;
+            const fontSize = segments > 12 ? baseFontSize - 4 : segments > 8 ? baseFontSize - 2 : baseFontSize;
+            this.ctx.font = `bold ${fontSize}px 'Poppins', Arial, sans-serif`;
+            
+            // Text position - well within segment
+            const textRadius = radius * 0.7;
+            
+            // Texto con alto contraste
+            this.ctx.fillStyle = '#ffffff';
+            this.ctx.strokeStyle = '#000000';
+            this.ctx.lineWidth = 3;
+
+            let displayText;
+            if (this.wheelType === 'mystery') {
+                displayText = '🎁';
+            } else if (this.wheelType === 'surprise') {
+                // Solo mostrar stickers/emojis, NO el texto real
+                displayText = this.surpriseStickers[i % this.surpriseStickers.length];
+            } else {
+                displayText = this.options[i];
+            }
+            
+            // Para la ruleta sorpresa, solo mostrar el emoji grande
+            if (this.wheelType === 'surprise') {
+                this.ctx.font = `${fontSize + Math.floor(size * 0.02)}px Arial`; // Emojis responsive
+                this.ctx.fillText(displayText, textRadius, 0);
+            } else {
+                // Handle text length
+                const maxLength = segments > 10 ? 15 : segments > 6 ? 20 : 30;
+                
+                if (displayText.length <= maxLength) {
+                    // Contorno blanco para legibilidad
+                    this.ctx.strokeText(displayText, textRadius, 0);
+                    this.ctx.fillText(displayText, textRadius, 0);
+                } else {
+                    // Split text into two lines
+                    const mid = Math.ceil(displayText.length / 2);
+                    const spaceIndex = displayText.indexOf(' ', mid - 5);
+                    
+                    let line1, line2;
+                    if (spaceIndex > -1 && spaceIndex < mid + 5) {
+                        line1 = displayText.substring(0, spaceIndex);
+                        line2 = displayText.substring(spaceIndex + 1);
+                    } else {
+                        line1 = displayText.substring(0, mid);
+                        line2 = displayText.substring(mid);
+                    }
+                    
+                    if (line1.length > maxLength / 2 + 2) {
+                        line1 = line1.substring(0, maxLength / 2) + '…';
+                    }
+                    if (line2.length > maxLength / 2 + 2) {
+                        line2 = line2.substring(0, maxLength / 2) + '…';
+                    }
+                    
+                    this.ctx.strokeText(line1, textRadius, -fontSize * 0.5);
+                    this.ctx.fillText(line1, textRadius, -fontSize * 0.5);
+                    this.ctx.strokeText(line2, textRadius, fontSize * 0.5);
+                    this.ctx.fillText(line2, textRadius, fontSize * 0.5);
+                }
+            }
+            
+            this.ctx.restore();
+        }
+
+        this.ctx.restore();
+
+        // Draw beautiful center circle with gradient
+        const centerRadius = size * 0.075; // 7.5% of canvas size
+        this.ctx.beginPath();
+        this.ctx.arc(centerX, centerY, centerRadius, 0, 2 * Math.PI);
+        this.ctx.fillStyle = '#000000';
+        this.ctx.fill();
+        
+        this.ctx.strokeStyle = '#e30070';
+        this.ctx.lineWidth = 4;
+        this.ctx.stroke();
+        
+        // Center heart with glow effect
+        this.ctx.textAlign = 'center';
+        this.ctx.textBaseline = 'middle';
+        this.ctx.font = `bold ${Math.floor(size * 0.045)}px Arial`; // Responsive heart size
+        this.ctx.fillStyle = '#e30070';
+        this.ctx.strokeStyle = '#e30070';
+        this.ctx.fillText('💕', centerX, centerY);
     }
 
-    closeResultModal() {
-        document.getElementById('result-modal').classList.remove('show');
+    drawEmptyWheel() {
+        if (!this.ctx) return;
+        
+        const size = this.canvasSize || 800;
+        const centerX = size / 2;
+        const centerY = size / 2;
+        const radius = (size * 0.44);
+        
+        this.ctx.clearRect(0, 0, size, size);
+        
+        // Draw empty circle
+        this.ctx.beginPath();
+        this.ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+        this.ctx.fillStyle = '#000000';
+        this.ctx.fill();
+        this.ctx.strokeStyle = '#e30070';
+        this.ctx.lineWidth = 4;
+        this.ctx.stroke();
+        
+        // Draw message
+        this.ctx.fillStyle = '#ffffff';
+        this.ctx.font = `bold ${Math.floor(size * 0.033)}px "Poppins", Arial, sans-serif`; // Responsive text
+        this.ctx.textAlign = 'center';
+        this.ctx.textBaseline = 'middle';
+        this.ctx.fillText('Agrega opciones', centerX, centerY - 10);
+        this.ctx.fillText('románticas 💕', centerX, centerY + 15);
+        
+        // Draw center
+        const centerRadius = size * 0.075;
+        this.ctx.beginPath();
+        this.ctx.arc(centerX, centerY, centerRadius, 0, 2 * Math.PI);
+        this.ctx.fillStyle = '#000000';
+        this.ctx.fill();
+        this.ctx.strokeStyle = '#e30070';
+        this.ctx.lineWidth = 4;
+        this.ctx.stroke();
+        this.ctx.font = `${Math.floor(size * 0.045)}px Arial`; // Responsive heart
+        this.ctx.fillStyle = '#e30070';
+        this.ctx.strokeStyle = '#e30070';
+        this.ctx.fillText('💕', centerX, centerY);
+    }
+
+    spinWheel() {
+        if (this.isSpinning || this.options.length < 2) return;
+        
+        console.log('Starting wheel spin with options:', this.options);
+        this.isSpinning = true;
+        
+        // Notificar a otros usuarios que estamos girando
+        this.notifySpinStart();
+        
+        const spinBtn = document.getElementById('spin-btn');
+        spinBtn.disabled = true;
+        spinBtn.textContent = '🎯 Girando... 💫';
+        
+        // Create spinning effect
+        this.createSpinParticles();
+        
+        // Add pointer animation
+        const pointer = document.querySelector('.wheel-pointer');
+        pointer.classList.add('spinning');
+        
+        // Calculate random result
+        const segments = this.options.length;
+        const segmentAngle = 360 / segments;
+        const randomSpins = 10 + Math.random() * 8; // Much more spins for more drama
+        const randomSegment = Math.floor(Math.random() * segments);
+        const finalRotation = 360 * randomSpins + (360 - randomSegment * segmentAngle - segmentAngle / 2);
+        
+        console.log('Spin calculation:', { segments, randomSegment, finalRotation });
+        
+        // Smooth animation with gradual deceleration
+        const startTime = Date.now();
+        const duration = 8000; // Much longer duration - 8 seconds!
+        const startRotation = this.rotation;
+        
+        let lastSegment = -1;
+        
+        const animate = () => {
+            const elapsed = Date.now() - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            
+            // Smooth cubic-bezier easing for gradual deceleration
+            const easeOut = progress < 0.5 
+                ? 2 * progress * progress 
+                : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+            
+            this.rotation = startRotation + (finalRotation - startRotation) * easeOut;
+            
+            // Notificar rotación actual a otros usuarios durante el giro
+            if (progress > 0.1 && progress < 0.9 && Math.random() < 0.1) { // 10% chance cada frame
+                this.updateSpinProgress();
+            }
+            
+            this.drawWheel();
+            
+            // Add tick sound effect when crossing segments
+            const currentSegment = Math.floor(((360 - (this.rotation % 360)) / segmentAngle)) % segments;
+            if (currentSegment !== lastSegment && progress > 0.1 && progress < 0.95) {
+                this.playTickSound();
+                lastSegment = currentSegment;
+            }
+            
+            if (progress < 1) {
+                requestAnimationFrame(animate);
+            } else {
+                pointer.classList.remove('spinning');
+                console.log('Spin completed, final result:', this.options[randomSegment]);
+                this.showResult(randomSegment);
+                this.isSpinning = false;
+                this.notifySpinEnd(); // Notificar que terminó de girar
+                spinBtn.disabled = false;
+                spinBtn.textContent = '🎯 Girar Ruleta';
+            }
+        };
+        
+        animate();
+    }
+    
+    async updateSpinProgress() {
+        if (this.currentSession) {
+            try {
+                const { updateSpinningState } = await import('./src/supabase.js');
+                await updateSpinningState(
+                    this.currentSession.id,
+                    true,
+                    this.rotation,
+                    this.wheelType,
+                    this.options,
+                    null
+                );
+            } catch (error) {
+                console.error('Error updating spin progress:', error);
+            }
+        }
+    }
+
+    async notifySpinStart() {
+        console.log('Notifying spin start to other users');
+        if (this.currentSession) {
+            try {
+                const { updateSpinningState } = await import('./src/supabase.js');
+                const { data, error } = await updateSpinningState(
+                    this.currentSession.id,
+                    true,
+                    this.rotation,
+                    this.wheelType,
+                    this.options
+                );
+                
+                if (error) {
+                    console.error('Error notifying spin start:', error);
+                } else {
+                    console.log('Spin start notified successfully', data);
+                }
+            } catch (error) {
+                console.error('Error notifying spin start:', error);
+            }
+        }
+    }
+
+    async notifySpinEnd() {
+        // Get the final result before notifying
+        const segments = this.options.length;
+        const segmentAngle = 360 / segments;
+        const normalizedRotation = ((360 - (this.rotation % 360)) + 360) % 360;
+        const resultIndex = Math.floor(normalizedRotation / segmentAngle) % segments;
+        const result = this.options[resultIndex];
+        
+        console.log('Notifying spin end with result:', result);
+        
+        if (this.currentSession) {
+            try {
+                const { updateSpinningState } = await import('./src/supabase.js');
+                const { data, error } = await updateSpinningState(
+                    this.currentSession.id,
+                    false,
+                    this.rotation,
+                    this.wheelType,
+                    this.options,
+                    result
+                );
+                
+                if (error) {
+                    console.error('Error notifying spin end:', error);
+                } else {
+                    console.log('Spin end notified successfully with result:', result, data);
+                }
+            } catch (error) {
+                console.error('Error notifying spin end:', error);
+            }
+        }
+    }
+
+    showResult(segmentIndex) {
+        const result = this.options[segmentIndex];
+        const modal = document.getElementById('result-modal');
+        const resultText = document.getElementById('result-text');
+        
+        resultText.textContent = result;
+        modal.classList.add('show');
+        
+        // Create celebration particles
+        this.createCelebrationEffect();
+        
+        // Play romantic sound (if available)
+        this.playRomanticSound();
+    }
+
+    closeModal() {
+        const modal = document.getElementById('result-modal');
+        modal.classList.remove('show');
+    }
+
+    saveWheel() {
+        if (this.options.length < 2) {
+            alert('Agrega al menos 2 opciones para guardar la ruleta 💕');
+            return;
+        }
+        
+        const name = prompt('¿Cómo quieres llamar a tu ruleta romántica? 💗');
+        if (!name) return;
+        
+        const wheel = {
+            id: Date.now(),
+            name: name,
+            type: this.wheelType,
+            options: [...this.options],
+            createdAt: new Date().toLocaleDateString()
+        };
+        
+        this.savedWheels.push(wheel);
+        localStorage.setItem('romanticWheels', JSON.stringify(this.savedWheels));
+        this.loadSavedWheels();
+        
+        alert('¡Ruleta guardada con amor! 💕✨');
+        this.createParticleEffect('💾');
+    }
+
+    loadSavedWheels() {
+        const grid = document.getElementById('wheels-grid');
+        grid.innerHTML = '';
+        
+        if (this.savedWheels.length === 0) {
+            grid.innerHTML = '<p style="text-align: center; color: #666; font-style: italic;">No tienes ruletas guardadas aún 💔</p>';
+            return;
+        }
+        
+        this.savedWheels.forEach(wheel => {
+            const card = document.createElement('div');
+            card.className = 'saved-wheel-card fade-in';
+            
+            const typeEmoji = wheel.type === 'mystery' ? '🎁' : wheel.type === 'surprise' ? '💗' : '🎀';
+            
+            card.innerHTML = `
+                <div class="saved-wheel-title">${typeEmoji} ${wheel.name}</div>
+                <div class="saved-wheel-info">${wheel.options.length} opciones • ${wheel.createdAt}</div>
+                <div class="saved-wheel-actions">
+                    <button class="load-wheel-btn" onclick="roulette.loadWheel(${wheel.id})">Cargar ✨</button>
+                    <button class="delete-wheel-btn" onclick="roulette.deleteWheel(${wheel.id})">Eliminar 🗑️</button>
+                </div>
+            `;
+            
+            grid.appendChild(card);
+        });
+    }
+
+    loadWheel(wheelId) {
+        const wheel = this.savedWheels.find(w => w.id === wheelId);
+        if (!wheel) return;
+        
+        this.selectWheelType(wheel.type);
+        this.options = [...wheel.options];
+        this.updateDisplay();
+        this.initCanvas(); // Reinitialize canvas for responsive sizing
+        this.drawWheel();
+        
+        this.createParticleEffect('💕');
+    }
+
+    deleteWheel(wheelId) {
+        if (!confirm('¿Estás seguro de que quieres eliminar esta ruleta? 💔')) return;
+        
+        this.savedWheels = this.savedWheels.filter(w => w.id !== wheelId);
+        localStorage.setItem('romanticWheels', JSON.stringify(this.savedWheels));
+        this.loadSavedWheels();
+        
+        this.createParticleEffect('💔');
     }
 
     showWheelSelection() {
-        document.getElementById('wheel-creator').classList.add('hidden');
         document.getElementById('wheel-selection').classList.remove('hidden');
+        document.getElementById('wheel-creator').classList.add('hidden');
         this.wheelType = null;
         this.options = [];
     }
 
-    saveWheel() {
-        if (this.options.length === 0) {
-            alert('Agrega al menos una opción para guardar la ruleta');
-            return;
-        }
+    // Particle System
+    startParticleSystem() {
+        setInterval(() => {
+            this.createRandomParticle();
+        }, 2000);
+    }
+
+    createRandomParticle() {
+        const particles = ['💕', '✨', '💗', '🌟', '❤️', '💎'];
+        const particle = particles[Math.floor(Math.random() * particles.length)];
+        this.createParticleEffect(particle);
+    }
+
+    createParticleEffect(emoji) {
+        const particle = document.createElement('div');
+        particle.className = 'particle';
+        particle.textContent = emoji;
+        particle.style.left = Math.random() * 100 + '%';
+        particle.style.animationDelay = Math.random() * 2 + 's';
+        particle.style.animationDuration = (4 + Math.random() * 4) + 's';
         
-        const wheelName = prompt('Nombre para tu ruleta:');
-        if (wheelName) {
-            const savedWheels = JSON.parse(localStorage.getItem('saved_wheels') || '[]');
-            const wheel = {
-                id: Date.now(),
-                name: wheelName,
-                type: this.wheelType,
-                options: [...this.options],
-                created: new Date().toISOString()
-            };
-            
-            savedWheels.push(wheel);
-            localStorage.setItem('saved_wheels', JSON.stringify(savedWheels));
-            alert('¡Ruleta guardada!');
+        document.getElementById('particles').appendChild(particle);
+        
+        setTimeout(() => {
+            particle.remove();
+        }, 8000);
+    }
+
+    createSpinParticles() {
+        const spinParticles = ['💫', '⭐', '✨', '🌟', '💥'];
+        for (let i = 0; i < 10; i++) {
+            setTimeout(() => {
+                const particle = spinParticles[Math.floor(Math.random() * spinParticles.length)];
+                this.createParticleEffect(particle);
+            }, i * 100);
         }
     }
 
-    createParticles() {
-        const particles = document.getElementById('particles');
-        const particleEmojis = ['💕', '✨', '🌟', '💗', '❤️', '💖', '🎀', '🌸'];
-        
-        setInterval(() => {
-            const particle = document.createElement('div');
-            particle.className = 'particle';
-            particle.textContent = particleEmojis[Math.floor(Math.random() * particleEmojis.length)];
-            particle.style.left = Math.random() * 100 + 'vw';
-            particle.style.animationDuration = (3 + Math.random() * 3) + 's';
-            particle.style.animationDelay = Math.random() * 2 + 's';
-            
-            particles.appendChild(particle);
-            
+    createCelebrationEffect() {
+        const celebrationParticles = ['🎉', '🎊', '💕', '✨', '🌟', '💗', '❤️', '💎'];
+        for (let i = 0; i < 20; i++) {
             setTimeout(() => {
-                particle.remove();
-            }, 8000);
-        }, 2000);
+                const particle = celebrationParticles[Math.floor(Math.random() * celebrationParticles.length)];
+                this.createParticleEffect(particle);
+            }, i * 50);
+        }
+    }
+
+    shuffleArray(array) {
+        const shuffled = [...array];
+        for (let i = shuffled.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
+        return shuffled;
+    }
+
+    playRomanticSound() {
+        // Create a simple romantic tone using Web Audio API
+        try {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            
+            // Create a sweet romantic melody
+            const frequencies = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+            
+            frequencies.forEach((freq, index) => {
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.setValueAtTime(freq, audioContext.currentTime);
+                oscillator.type = 'sine';
+                
+                gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+                gainNode.gain.linearRampToValueAtTime(0.1, audioContext.currentTime + 0.01);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3 + index * 0.1);
+                
+                oscillator.start(audioContext.currentTime + index * 0.1);
+                oscillator.stop(audioContext.currentTime + 0.4 + index * 0.1);
+            });
+        } catch (error) {
+            console.log('Audio not supported');
+        }
+    }
+    
+    playTickSound() {
+        try {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+            oscillator.type = 'square';
+            
+            gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+            gainNode.gain.linearRampToValueAtTime(0.1, audioContext.currentTime + 0.01);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.1);
+        } catch (error) {
+            console.log('Audio not supported');
+        }
+    }
+    
+    highlightCurrentSegment(segmentIndex) {
+        // Add visual highlight effect
+        this.currentHighlight = segmentIndex;
+        setTimeout(() => {
+            this.currentHighlight = null;
+        }, 150);
     }
 }
 
-// Inicializar aplicación
-let wheelApp;
+// Initialize the application
+let roulette;
 document.addEventListener('DOMContentLoaded', () => {
-    wheelApp = new WheelApp();
-});
-
-// Limpiar al salir
-window.addEventListener('beforeunload', async () => {
-    if (wheelApp?.userSession) {
-        await removeUserSession(wheelApp.userSession.id);
-    }
+    roulette = new RomanticRoulette();
 });
