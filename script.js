@@ -298,7 +298,7 @@ class RomanticRoulette {
             this.ctx.textBaseline = 'middle';
             
             // Text size based on segments
-            const fontSize = segments > 12 ? 12 : segments > 8 ? 14 : 16;
+            let fontSize = segments > 12 ? 11 : segments > 8 ? 13 : 15;
             this.ctx.font = `bold ${fontSize}px 'Poppins', Arial, sans-serif`;
             
             const fontSize = segments > 12 ? 16 : segments > 8 ? 20 : 24;
