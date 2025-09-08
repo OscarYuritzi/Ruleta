@@ -439,8 +439,9 @@ body {
     align-items: center;
     gap: 15px;
     width: 100%;
-    max-width: 800px;
+    max-width: 100%;
     margin: 0 auto;
+    padding: 0 20px;
 }
 
 .spin-button-container {
@@ -578,11 +579,10 @@ body {
     outline: 3px solid #e30052;
     outline-offset: 1px;
     transition: transform 0.1s ease;
-    width: 800px;
-    height: 800px;
-    display: block;
-    max-width: 100%;
+    width: 100%;
     height: auto;
+    display: block;
+    max-width: 800px;
     aspect-ratio: 1;
 }
 
@@ -783,6 +783,17 @@ body {
         padding: 0 15px;
     }
     
+    .wheel-container {
+        padding: 0 10px;
+        gap: 10px;
+    }
+    
+    #wheel-canvas {
+        border: 4px solid #ffffff;
+        outline: 2px solid #e30052;
+        max-width: 500px;
+    }
+    
     .logo {
         font-size: 2rem;
     }
@@ -835,10 +846,6 @@ body {
         flex-direction: column;
     }
     
-    .wheel-container {
-        max-width: 500px;
-    }
-    
     .wheel-pointer {
         font-size: 2.5rem;
     }
@@ -885,6 +892,17 @@ body {
         padding: 20px 0;
     }
     
+    .wheel-container {
+        padding: 0 5px;
+        gap: 8px;
+    }
+    
+    #wheel-canvas {
+        border: 3px solid #ffffff;
+        outline: 2px solid #e30052;
+        max-width: 380px;
+    }
+    
     .wheel-card {
         padding: 25px 15px;
     }
@@ -895,10 +913,6 @@ body {
     
     .wheel-card h3 {
         font-size: 1.3rem;
-    }
-    
-    .wheel-container {
-        max-width: 400px;
     }
     
     .wheel-pointer {

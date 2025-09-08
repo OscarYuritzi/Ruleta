@@ -172,11 +172,19 @@ class RomanticRoulette {
         this.canvas = document.getElementById('wheel-canvas');
         this.ctx = this.canvas.getContext('2d');
         
+        // Get container width for responsive sizing
+        const container = this.canvas.parentElement;
+        const containerWidth = container.offsetWidth;
+        const maxSize = Math.min(containerWidth - 40, 800); // Leave some padding
+        
         // Set actual canvas size for crisp rendering
         const scale = window.devicePixelRatio || 1;
-        this.canvas.width = 800 * scale;
-        this.canvas.height = 800 * scale;
+        this.canvas.width = maxSize * scale;
+        this.canvas.height = maxSize * scale;
         this.ctx.scale(scale, scale);
+        
+        // Store canvas size for drawing
+        this.canvasSize = maxSize;
         
         this.drawWheel();
     }
@@ -254,9 +262,10 @@ class RomanticRoulette {
             return;
         }
         
-        const centerX = 400;
-        const centerY = 400;
-        const radius = 350; // Much bigger radius
+        const size = this.canvasSize || 800;
+        const centerX = size / 2;
+        const centerY = size / 2;
+        const radius = (size * 0.44); // 44% of canvas size for responsive radius
         const segments = this.options.length;
         const anglePerSegment = (2 * Math.PI) / segments;
         
@@ -266,7 +275,7 @@ class RomanticRoulette {
         this.ctx.clearRect(0, 0, 600, 600);
         this.ctx.save();
         this.ctx.translate(centerX, centerY);
-        this.ctx.clearRect(0, 0, 800, 800);
+        this.ctx.clearRect(-centerX, -centerY, size, size);
         this.ctx.rotate(this.rotation * Math.PI / 180);
         
         // Draw segments
@@ -294,8 +303,9 @@ class RomanticRoulette {
             this.ctx.textAlign = 'center';
             this.ctx.textBaseline = 'middle';
             
-            // Text size based on segments
-            const fontSize = segments > 12 ? 16 : segments > 8 ? 18 : 20;
+            // Responsive text size based on segments and screen size
+            let baseFontSize = size > 600 ? 20 : size > 400 ? 16 : 14;
+            const fontSize = segments > 12 ? baseFontSize - 4 : segments > 8 ? baseFontSize - 2 : baseFontSize;
             this.ctx.font = `bold ${fontSize}px 'Poppins', Arial, sans-serif`;
             
             // Text position - well within segment
@@ -318,7 +328,7 @@ class RomanticRoulette {
             
             // Para la ruleta sorpresa, solo mostrar el emoji grande
             if (this.wheelType === 'surprise') {
-                this.ctx.font = `${fontSize + 12}px Arial`; // Emojis más grandes
+                this.ctx.font = `${fontSize + Math.floor(size * 0.02)}px Arial`; // Emojis responsive
                 this.ctx.fillText(displayText, textRadius, 0);
             } else {
             // Handle text length
@@ -362,7 +372,7 @@ class RomanticRoulette {
         this.ctx.restore();
 
         // Draw beautiful center circle with gradient
-        const centerRadius = 60; // Bigger center for bigger canvas
+        const centerRadius = size * 0.075; // 7.5% of canvas size
         this.ctx.beginPath();
         this.ctx.arc(centerX, centerY, centerRadius, 0, 2 * Math.PI);
         this.ctx.fillStyle = '#ffffff';
@@ -375,7 +385,7 @@ class RomanticRoulette {
         // Center heart with glow effect
         this.ctx.textAlign = 'center';
         this.ctx.textBaseline = 'middle';
-        this.ctx.font = 'bold 36px Arial'; // Bigger heart
+        this.ctx.font = `bold ${Math.floor(size * 0.045)}px Arial`; // Responsive heart size
         this.ctx.fillStyle = '#e30052';
         this.ctx.strokeStyle = '#e30052';
         this.ctx.fillText('💕', centerX, centerY);
@@ -384,11 +394,11 @@ class RomanticRoulette {
     drawEmptyWheel() {
         if (!this.ctx) return;
         
-        const centerX = 400;
-        const centerY = 400;
-        const radius = 350;
+        const size = this.canvasSize || 800;
+        const centerX = size / 2;
+        const centerY = size / 2;
+        const radius = (size * 0.44);
         
-        this.ctx.clearRect(0, 0, 800, 800);
         
         // Draw empty circle
         this.ctx.beginPath();
@@ -401,14 +411,14 @@ class RomanticRoulette {
         
         // Draw message
         this.ctx.fillStyle = '#1a1a1a';
-        this.ctx.font = 'bold 26px "Poppins", Arial, sans-serif'; // Bigger text
+        this.ctx.font = `bold ${Math.floor(size * 0.033)}px "Poppins", Arial, sans-serif`; // Responsive text
         this.ctx.textAlign = 'center';
         this.ctx.textBaseline = 'middle';
         this.ctx.fillText('Agrega opciones', centerX, centerY - 10);
         this.ctx.fillText('románticas 💕', centerX, centerY + 15);
         
         // Draw center
-        const centerRadius = 60;
+        const centerRadius = size * 0.075;
         this.ctx.beginPath();
         this.ctx.arc(centerX, centerY, centerRadius, 0, 2 * Math.PI);
         this.ctx.fillStyle = '#ffffff';
@@ -416,7 +426,7 @@ class RomanticRoulette {
         this.ctx.strokeStyle = '#e30052';
         this.ctx.lineWidth = 4;
         this.ctx.stroke();
-        this.ctx.font = '36px Arial'; // Bigger heart
+        this.ctx.font = `${Math.floor(size * 0.045)}px Arial`; // Responsive heart
         this.ctx.fillStyle = '#e30052';
         this.ctx.strokeStyle = '#e30052';
         this.ctx.fillText('💕', centerX, centerY);
@@ -564,6 +574,7 @@ class RomanticRoulette {
         this.selectWheelType(wheel.type);
         this.options = [...wheel.options];
         this.updateDisplay();
+        this.initCanvas(); // Reinitialize canvas for responsive sizing
         this.drawWheel();
         
         this.createParticleEffect('💕');
