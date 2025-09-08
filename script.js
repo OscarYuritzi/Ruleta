@@ -227,6 +227,116 @@ class RomanticRoulette {
 
     drawWheel() {
         if (!this.ctx || this.options.length === 0) {
+            this.drawEmptyWheel();
+            return;
+        }
+        
+        const centerX = 300;
+        const centerY = 300;
+        const radius = 250;
+        const segments = this.options.length;
+        const anglePerSegment = (2 * Math.PI) / segments;
+        
+        // Colors: predominantly white with fuchsia and black accents
+        const colors = ['#ffffff', '#e30052']; // White primary, fuchsia secondary
+        
+        this.ctx.clearRect(0, 0, 600, 600);
+        this.ctx.save();
+        this.ctx.translate(centerX, centerY);
+        this.ctx.rotate(this.rotation * Math.PI / 180);
+        
+        // Draw segments
+        for (let i = 0; i < segments; i++) {
+            const startAngle = i * anglePerSegment;
+            const endAngle = (i + 1) * anglePerSegment;
+            const color = colors[i % colors.length];
+            
+            // Draw segment
+            this.ctx.beginPath();
+            this.ctx.arc(0, 0, radius, startAngle, endAngle);
+            this.ctx.lineTo(0, 0);
+            
+            this.ctx.fillStyle = color;
+            this.ctx.fill();
+            
+            // Black border for definition
+            this.ctx.strokeStyle = '#000000';
+            this.ctx.lineWidth = 2;
+            this.ctx.stroke();
+
+            // Draw text
+            this.ctx.save();
+            this.ctx.rotate(startAngle + anglePerSegment / 2);
+            this.ctx.textAlign = 'center';
+            this.ctx.textBaseline = 'middle';
+            
+            // Text size based on segments
+            const fontSize = segments > 12 ? 12 : segments > 8 ? 14 : 16;
+            this.ctx.font = `bold ${fontSize}px Arial`;
+            
+            // Text position - well within segment
+            const textRadius = radius * 0.65;
+            
+            // High contrast text colors
+            const isWhiteSegment = i % 2 === 0;
+            this.ctx.fillStyle = isWhiteSegment ? '#000000' : '#ffffff'; // Black on white, white on fuchsia
+            this.ctx.strokeStyle = isWhiteSegment ? '#ffffff' : '#000000';
+            this.ctx.lineWidth = 1;
+
+            let displayText;
+            if (this.wheelType === 'mystery') {
+                displayText = '🎁';
+            } else {
+                displayText = this.options[i];
+            }
+            
+            // Handle text length
+            const maxLength = segments > 10 ? 15 : segments > 6 ? 20 : 30;
+            
+            if (displayText.length <= maxLength) {
+                this.ctx.strokeText(displayText, textRadius, 0);
+                this.ctx.fillText(displayText, textRadius, 0);
+            } else {
+                // Split text into two lines
+                const words = displayText.split(' ');
+                let line1 = words[0] || '';
+                let line2 = words.slice(1).join(' ');
+                
+                if (line1.length > maxLength / 2) {
+                    line1 = line1.substring(0, maxLength / 2 - 2) + '..';
+                }
+                if (line2.length > maxLength / 2) {
+                    line2 = line2.substring(0, maxLength / 2 - 2) + '..';
+                }
+                
+                this.ctx.strokeText(line1, textRadius, -fontSize * 0.5);
+                this.ctx.fillText(line1, textRadius, -fontSize * 0.5);
+                this.ctx.strokeText(line2, textRadius, fontSize * 0.5);
+                this.ctx.fillText(line2, textRadius, fontSize * 0.5);
+            }
+            
+            this.ctx.restore();
+        }
+
+        this.ctx.restore();
+
+        // Draw center circle - white with fuchsia accent
+        this.ctx.beginPath();
+        this.ctx.arc(centerX, centerY, 45, 0, 2 * Math.PI);
+        this.ctx.fillStyle = '#ffffff'; // White center
+        this.ctx.fill();
+        
+        this.ctx.strokeStyle = '#e30052'; // Fuchsia border
+        this.ctx.lineWidth = 4;
+        this.ctx.stroke();
+        
+        // Center heart emoji
+        this.ctx.textAlign = 'center';
+        this.ctx.textBaseline = 'middle';
+        this.ctx.font = '28px Arial';
+        this.ctx.fillStyle = '#e30052'; // Fuchsia heart
+        this.ctx.fillText('💕', centerX, centerY);
+    }
         }
         // Fuchsia color scheme - only 3 colors
         const fuchsiaColors = ['#e30052', '#ffffff']; // Alternate between fuchsia and white
@@ -350,33 +460,33 @@ class RomanticRoulette {
         
         this.ctx.clearRect(0, 0, 600, 600);
         
-        // Draw empty circle with fuchsia scheme
+        // Draw empty circle - white with fuchsia accent
         this.ctx.beginPath();
         this.ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
         this.ctx.fillStyle = '#ffffff';
         this.ctx.fill();
         this.ctx.strokeStyle = '#e30052';
-        this.ctx.lineWidth = 4;
+        this.ctx.lineWidth = 3;
         this.ctx.stroke();
         
         // Draw message
         this.ctx.fillStyle = '#000000';
-        this.ctx.font = 'bold 20px Arial';
+        this.ctx.font = 'bold 18px Arial';
         this.ctx.textAlign = 'center';
         this.ctx.textBaseline = 'middle';
         this.ctx.fillText('Agrega opciones', centerX, centerY - 10);
         this.ctx.fillText('románticas 💕', centerX, centerY + 15);
         
-        // Draw center
+        // Draw center - white with fuchsia border
         this.ctx.beginPath();
         this.ctx.arc(centerX, centerY, 45, 0, 2 * Math.PI);
-        this.ctx.fillStyle = '#e30052';
+        this.ctx.fillStyle = '#ffffff';
         this.ctx.fill();
-        this.ctx.strokeStyle = '#000000';
-        this.ctx.lineWidth = 4;
+        this.ctx.strokeStyle = '#e30052';
+        this.ctx.lineWidth = 3;
         this.ctx.stroke();
         this.ctx.font = '28px Arial';
-        this.ctx.fillStyle = '#ffffff';
+        this.ctx.fillStyle = '#e30052';
         this.ctx.fillText('💕', centerX, centerY);
     }
 
