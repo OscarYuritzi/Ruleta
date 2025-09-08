@@ -226,6 +226,7 @@ class RomanticRoulette {
 
     drawWheel() {
         if (!this.ctx || this.options.length === 0) {
+        }
         // Fucsia color scheme - only 3 colors
         const fucsiaColors = ['#e30052', '#ffffff']; // Alternate between fucsia and white
         
