@@ -145,6 +145,9 @@ async function connectCouple() {
         // Setup realtime subscription
         await setupRealtimeSubscription();
         
+        // Small delay to ensure subscription is active
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
         // Check for existing partners and notify
         await checkExistingPartners();
         
@@ -256,13 +259,20 @@ async function checkExistingPartners() {
             .from('realtime_sessions')
             .select('*')
             .eq('couple_name', currentCouple)
-            .neq('user_name', currentUser)
             .gte('last_activity', new Date(Date.now() - 5 * 60 * 1000).toISOString());
         
         if (!error && sessions && sessions.length > 0) {
-            connectedPartners = sessions.map(s => s.user_name);
+            // Filter out current user and get partners
+            connectedPartners = sessions
+                .filter(s => s.user_name !== currentUser)
+                .map(s => s.user_name);
+            
             updatePartnerStatus();
-            showPartnerConnectionNotification(sessions[0].user_name, 'already_connected');
+            
+            // Show notification for each existing partner
+            connectedPartners.forEach(partnerName => {
+                showPartnerConnectionNotification(partnerName, 'already_connected');
+            });
         }
     } catch (error) {
         console.error('Error checking existing partners:', error);
@@ -373,6 +383,17 @@ function handleRealtimeUpdate(payload) {
             connectedPartners.push(newRecord.user_name);
             updatePartnerStatus();
             showPartnerConnectionNotification(newRecord.user_name, 'joining');
+            
+            // Update our session to trigger partner's status update
+            if (currentUserSession) {
+                updateSpinningState(
+                    currentUserSession.id,
+                    false,
+                    wheelRotation,
+                    currentWheelType,
+                    currentOptions
+                );
+            }
         }
     }
     
@@ -384,27 +405,39 @@ function handleRealtimeUpdate(payload) {
     }
     
     if (eventType === 'UPDATE' && newRecord) {
-        // Update partners list if needed
-        if (newRecord.user_name !== currentUser && !connectedPartners.includes(newRecord.user_name)) {
-            connectedPartners.push(newRecord.user_name);
-            updatePartnerStatus();
+        // Handle partner activity updates
+        if (newRecord.user_name !== currentUser) {
+            // Update partners list if partner is active
+            const isPartnerActive = new Date(newRecord.last_activity) > new Date(Date.now() - 5 * 60 * 1000);
+            const isInPartnersList = connectedPartners.includes(newRecord.user_name);
+            
+            if (isPartnerActive && !isInPartnersList) {
+                connectedPartners.push(newRecord.user_name);
+                updatePartnerStatus();
+                showPartnerConnectionNotification(newRecord.user_name, 'joining');
+            } else if (!isPartnerActive && isInPartnersList) {
+                connectedPartners = connectedPartners.filter(name => name !== newRecord.user_name);
+                updatePartnerStatus();
+                showPartnerConnectionNotification(newRecord.user_name, 'disconnected');
+            }
         }
         
         // Partner started spinning
-        if (newRecord.is_spinning && !oldRecord?.is_spinning) {
+        if (newRecord.is_spinning && !oldRecord?.is_spinning && newRecord.user_name !== currentUser) {
             console.log(`🎯 ${newRecord.user_name} comenzó a girar`);
             syncPartnerSpin(newRecord);
         }
         
         // Partner finished spinning
-        if (!newRecord.is_spinning && oldRecord?.is_spinning) {
+        if (!newRecord.is_spinning && oldRecord?.is_spinning && newRecord.user_name !== currentUser) {
             console.log(`🎉 ${newRecord.user_name} terminó de girar:`, newRecord.last_result);
             syncPartnerResult(newRecord);
         }
         
         // Partner changed wheel type or options
-        if (newRecord.wheel_type !== oldRecord?.wheel_type || 
-            JSON.stringify(newRecord.current_options) !== JSON.stringify(oldRecord?.current_options)) {
+        if (newRecord.user_name !== currentUser && 
+            (newRecord.wheel_type !== oldRecord?.wheel_type || 
+            JSON.stringify(newRecord.current_options) !== JSON.stringify(oldRecord?.current_options))) {
             console.log(`🔄 ${newRecord.user_name} cambió la ruleta`);
             syncPartnerWheel(newRecord);
         }
@@ -434,8 +467,14 @@ function syncPartnerResult(partnerSession) {
     const partnerName = partnerSession.user_name;
     const result = partnerSession.last_result;
     
+    // Make sure we have a valid result
+    if (!result || result.trim() === '') {
+        console.log('⚠️ Resultado vacío, ignorando');
+        return;
+    }
+    
     // Avoid showing the same result multiple times
-    if (lastProcessedResult === `${partnerName}-${result}-${partnerSession.id}`) {
+    const resultKey = `${partnerName}-${result}-${partnerSession.id}-${partnerSession.last_activity}`;
         console.log('🔄 Resultado ya procesado, ignorando');
         return;
     }
@@ -447,6 +486,8 @@ function syncPartnerResult(partnerSession) {
     
     // Show partner result
     showPartnerResult(partnerName, result);
+    
+    console.log(`✅ Resultado sincronizado de ${partnerName}: ${result}`);
 }
 
 // Sync partner wheel
@@ -510,19 +551,22 @@ function showPartnerResult(partnerName, result) {
     if (resultText && resultModal) {
         resultText.innerHTML = `
             <div style="margin-bottom: 15px; color: #e30070; font-size: 1.2rem;">
-                🎯 Resultado de ${partnerName}:
+                💕 Resultado de tu pareja ${partnerName}:
             </div>
             <div style="font-size: 1.6rem; font-weight: bold; line-height: 1.4;">
                 ${result}
+            </div>
+            <div style="margin-top: 20px; font-size: 1rem; color: #cc0066; font-style: italic;">
+                ¡Tu pareja ha girado la ruleta! 🎯✨
             </div>
         `;
         
         resultModal.classList.add('show');
         
-        // Auto-close after 8 seconds
+        // Auto-close after 10 seconds (más tiempo para leer)
         setTimeout(() => {
             resultModal.classList.remove('show');
-        }, 8000);
+        }, 10000);
     }
 }
 
@@ -900,6 +944,7 @@ async function spinWheel() {
         const result = currentOptions[segmentIndex];
         
         console.log(`🎉 Resultado: ${result}`);
+        console.log(`📤 Enviando resultado a pareja: ${result}`);
         
         isSpinning = false;
         spinBtn.textContent = '🎯 Girar Ruleta';
@@ -907,7 +952,7 @@ async function spinWheel() {
         
         // Notify partner with result
         if (currentUserSession) {
-            await updateSpinningState(
+            const updateResult = await updateSpinningState(
                 currentUserSession.id,
                 false,
                 wheelRotation,
@@ -915,6 +960,12 @@ async function spinWheel() {
                 currentOptions,
                 result
             );
+            
+            if (updateResult.error) {
+                console.error('❌ Error enviando resultado a pareja:', updateResult.error);
+            } else {
+                console.log('✅ Resultado enviado exitosamente a pareja');
+            }
         }
         
         // Show result
