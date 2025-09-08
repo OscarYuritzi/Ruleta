@@ -897,18 +897,17 @@ body {
     }
     
     .wheel-container {
-        padding: 0; /* Sin padding para maximizar espacio */
+        padding: 0 5px;
         gap: 8px;
     }
     
     #wheel-canvas {
         border: 3px solid #ffffff;
         outline: 2px solid #e30052;
-        max-width: 700px; /* Móvil súper grande */
     }
     
     .container {
-        padding: 0 10px; /* Reducir padding del contenedor principal */
+        padding: 0 10px;
     }
     
     .wheel-card {
@@ -916,11 +915,11 @@ body {
     }
     
     .creator-content {
-        gap: 10px; /* Minimal gap to maximize wheel space */
+        gap: 15px;
     }
     
     .wheel-creator {
-        padding: 20px 15px; /* Menos padding en móviles */
+        padding: 20px 10px;
     }
     
     .card-icon {
