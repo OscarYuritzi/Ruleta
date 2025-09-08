@@ -80,6 +80,211 @@ class RomanticRoulette {
         });
     }
 
+    async requestUserName() {
+        while (!this.userName) {
+            const name = prompt('¡Bienvenido a las Ruletas del Amor! 💕\n\n¿Cómo te llamas? (Los demás usuarios podrán verte cuando gires una ruleta)');
+            
+            if (name && name.trim().length > 0) {
+                this.userName = name.trim();
+                
+                // Crear sesión en Supabase
+                try {
+                    const { data, error } = await getUserSession(this.userName);
+                    if (data && !error) {
+                        this.currentSession = data;
+                        this.showWelcomeMessage();
+                    } else {
+                        console.error('Error creating session:', error);
+                        alert('Error conectando con el servidor. Intenta recargar la página.');
+                    }
+                } catch (error) {
+                    console.error('Error with Supabase:', error);
+                    alert('Error de conexión. Verifica que Supabase esté configurado correctamente.');
+                }
+            }
+        }
+    }
+
+    showWelcomeMessage() {
+        // Crear mensaje de bienvenida
+        const welcomeDiv = document.createElement('div');
+        welcomeDiv.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(145deg, #e30070, #cc0066);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(227, 0, 112, 0.3);
+            z-index: 1001;
+            font-weight: 600;
+            animation: slideInRight 0.5s ease-out;
+        `;
+        welcomeDiv.innerHTML = `¡Hola ${this.userName}! 💕<br><small>Otros usuarios podrán verte cuando gires</small>`;
+        
+        document.body.appendChild(welcomeDiv);
+        
+        // Remover después de 5 segundos
+        setTimeout(() => {
+            welcomeDiv.remove();
+        }, 5000);
+    }
+
+    async initRealtimeConnection() {
+        if (!supabase) {
+            console.error('Supabase no está configurado');
+            return;
+        }
+
+        try {
+            // Suscribirse a cambios en tiempo real
+            this.realtimeChannel = supabase
+                .channel('realtime-roulettes')
+                .on('postgres_changes', {
+                    event: '*',
+                    schema: 'public',
+                    table: 'realtime_sessions'
+                }, (payload) => {
+                    this.handleRealtimeUpdate(payload);
+                })
+                .subscribe();
+
+            // Cargar sesiones activas iniciales
+            await this.loadActiveSessions();
+            
+            // Actualizar cada 30 segundos para mantener sesión activa
+            setInterval(() => {
+                this.keepSessionAlive();
+            }, 30000);
+
+        } catch (error) {
+            console.error('Error setting up realtime connection:', error);
+        }
+    }
+
+    async loadActiveSessions() {
+        try {
+            const { data, error } = await getActiveSessions();
+            if (data && !error) {
+                this.activeSessions = data;
+                this.updateActiveSessionsDisplay();
+            }
+        } catch (error) {
+            console.error('Error loading active sessions:', error);
+        }
+    }
+
+    handleRealtimeUpdate(payload) {
+        const { eventType, new: newRecord, old: oldRecord } = payload;
+        
+        switch (eventType) {
+            case 'INSERT':
+                this.activeSessions.push(newRecord);
+                break;
+            case 'UPDATE':
+                const index = this.activeSessions.findIndex(s => s.id === newRecord.id);
+                if (index > -1) {
+                    this.activeSessions[index] = newRecord;
+                }
+                break;
+            case 'DELETE':
+                this.activeSessions = this.activeSessions.filter(s => s.id !== oldRecord.id);
+                break;
+        }
+        
+        this.updateActiveSessionsDisplay();
+    }
+
+    updateActiveSessionsDisplay() {
+        let activeUsersPanel = document.getElementById('active-users-panel');
+        
+        if (!activeUsersPanel) {
+            // Crear panel de usuarios activos
+            activeUsersPanel = document.createElement('div');
+            activeUsersPanel.id = 'active-users-panel';
+            activeUsersPanel.style.cssText = `
+                position: fixed;
+                top: 120px;
+                right: 20px;
+                background: rgba(0, 0, 0, 0.95);
+                backdrop-filter: blur(10px);
+                border: 2px solid #e30070;
+                border-radius: 15px;
+                padding: 15px;
+                max-width: 250px;
+                z-index: 1000;
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+                color: white;
+            `;
+            document.body.appendChild(activeUsersPanel);
+        }
+
+        // Filtrar sesiones activas (últimos 5 minutos)
+        const now = new Date();
+        const fiveMinutesAgo = new Date(now.getTime() - 5 * 60 * 1000);
+        
+        const recentSessions = this.activeSessions.filter(session => {
+            const lastActivity = new Date(session.last_activity);
+            return lastActivity > fiveMinutesAgo;
+        });
+
+        if (recentSessions.length === 0) {
+            activeUsersPanel.style.display = 'none';
+            return;
+        }
+
+        activeUsersPanel.style.display = 'block';
+        
+        let html = '<div style="font-weight: 600; color: #e30070; margin-bottom: 10px; text-align: center;">👥 Usuarios Activos</div>';
+        
+        recentSessions.forEach(session => {
+            const isSpinning = session.is_spinning;
+            const isCurrentUser = session.id === this.currentSession?.id;
+            
+            html += `
+                <div style="
+                    display: flex; 
+                    align-items: center; 
+                    padding: 5px 0; 
+                    border-bottom: 1px solid rgba(227, 0, 112, 0.2);
+                    ${isCurrentUser ? 'background: rgba(227, 0, 112, 0.1); border-radius: 8px; padding: 8px;' : ''}
+                ">
+                    <div style="
+                        width: 12px; 
+                        height: 12px; 
+                        border-radius: 50%; 
+                        background: ${isSpinning ? '#00ff00' : '#e30070'}; 
+                        margin-right: 8px;
+                        ${isSpinning ? 'animation: pulse 1s infinite;' : ''}
+                    "></div>
+                    <span style="flex: 1; font-size: 0.9rem;">
+                        ${session.user_name}${isCurrentUser ? ' (tú)' : ''}
+                    </span>
+                    ${isSpinning ? '<span style="font-size: 0.8rem; color: #00ff00;">🎯 Girando</span>' : ''}
+                </div>
+            `;
+        });
+        
+        activeUsersPanel.innerHTML = html;
+    }
+
+    async keepSessionAlive() {
+        if (this.currentSession) {
+            try {
+                await updateSpinningState(
+                    this.currentSession.id,
+                    this.isSpinning,
+                    this.rotation,
+                    this.wheelType,
+                    this.options
+                );
+            } catch (error) {
+                console.error('Error keeping session alive:', error);
+            }
+        }
+    }
+
     setupEventListeners() {
         // Wheel type selection
         document.querySelectorAll('.wheel-card').forEach(card => {
@@ -130,6 +335,25 @@ class RomanticRoulette {
                 this.closeModal();
             }
         });
+        
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', () => {
+            this.cleanup();
+        });
+    }
+
+    async cleanup() {
+        if (this.currentSession && this.currentSession.id) {
+            try {
+                await removeUserSession(this.currentSession.id);
+            } catch (error) {
+                console.error('Error during cleanup:', error);
+            }
+        }
+        
+        if (this.realtimeChannel) {
+            this.realtimeChannel.unsubscribe();
+        }
     }
 
     selectWheelType(type) {
@@ -480,6 +704,10 @@ class RomanticRoulette {
         if (this.isSpinning || this.options.length < 2) return;
         
         this.isSpinning = true;
+        
+        // Notificar a otros usuarios que estamos girando
+        this.notifySpinStart();
+        
         const spinBtn = document.getElementById('spin-btn');
         spinBtn.disabled = true;
         spinBtn.textContent = '🎯 Girando... 💫';
@@ -536,6 +764,38 @@ class RomanticRoulette {
         };
         
         animate();
+    }
+
+    async notifySpinStart() {
+        if (this.currentSession) {
+            try {
+                await updateSpinningState(
+                    this.currentSession.id,
+                    true,
+                    this.rotation,
+                    this.wheelType,
+                    this.options
+                );
+            } catch (error) {
+                console.error('Error notifying spin start:', error);
+            }
+        }
+    }
+
+    async notifySpinEnd() {
+        if (this.currentSession) {
+            try {
+                await updateSpinningState(
+                    this.currentSession.id,
+                    false,
+                    this.rotation,
+                    this.wheelType,
+                    this.options
+                );
+            } catch (error) {
+                console.error('Error notifying spin end:', error);
+            }
+        }
     }
 
     showResult(segmentIndex) {
