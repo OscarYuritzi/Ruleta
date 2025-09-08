@@ -495,30 +495,41 @@ function App() {
                 />
               </div>
 
-              {/* Spin button - Completely separate from wheel */}
-              <button
-                onClick={spinWheel}
-                disabled={isSpinning || options.length < 2}
-                className="bg-gradient-to-r from-pink-500 to-purple-600 text-white px-6 py-3 rounded-xl font-bold text-base shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 mb-4 w-full max-w-xs"
-              >
-                {isSpinning ? (
-                  <div className="flex items-center gap-3">
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    <span>Girando... 💫</span>
-                  </div>
-                ) : options.length < 2 ? (
-                  <span>Agrega más opciones ✨</span>
-                ) : (
-                  <span>GIRAR RULETA 💕</span>
-                )}
-              </button>
-
               {/* Wheel info */}
               <div className="text-center text-sm text-gray-600">
                 {options.length > 0 && (
                   <p>{options.length} opciones • {wheelType === 'mystery' ? 'Misteriosa' : wheelType === 'surprise' ? 'Sorpresa' : 'Normal'}</p>
                 )}
               </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Spin Button - Completely separate section */}
+        <div className="mt-8 flex justify-center">
+          <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-6 shadow-lg w-full max-w-md">
+            <button
+              onClick={spinWheel}
+              disabled={isSpinning || options.length < 2}
+              className="w-full bg-gradient-to-r from-pink-500 to-purple-600 text-white px-8 py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105"
+            >
+              {isSpinning ? (
+                <div className="flex items-center justify-center gap-3">
+                  <div className="w-6 h-6 border-3 border-white border-t-transparent rounded-full animate-spin"></div>
+                  <span>Girando... 💫</span>
+                </div>
+              ) : options.length < 2 ? (
+                <span>Agrega más opciones ✨</span>
+              ) : (
+                <span>🎯 GIRAR RULETA 💕</span>
+              )}
+            </button>
+            
+            {/* Additional info */}
+            <div className="mt-3 text-center text-sm text-gray-600">
+              {options.length >= 2 && !isSpinning && (
+                <p>¡Haz clic para descubrir tu sorpresa romántica! 💖</p>
+              )}
             </div>
           </div>
         </div>
