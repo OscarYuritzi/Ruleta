@@ -9,13 +9,14 @@ export const supabase = createClient(supabaseUrl, supabaseKey)
 export async function getUserSession(userName) {
   try {
     // Primero verificar si ya existe una sesión activa para este usuario
-    const { data: existingSession, error: fetchError } = await supabase
+    const { data: sessions, error: fetchError } = await supabase
       .from('realtime_sessions')
       .select('*')
       .eq('user_name', userName)
-      .single()
+      .limit(1)
 
-    if (existingSession && !fetchError) {
+    if (sessions && sessions.length > 0 && !fetchError) {
+      const existingSession = sessions[0]
       // Actualizar última actividad
       const { data, error } = await supabase
         .from('realtime_sessions')
