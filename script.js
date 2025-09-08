@@ -266,6 +266,9 @@ class RomanticRoulette {
             const endAngle = (i + 1) * anglePerSegment;
             const color = princessColors[i % princessColors.length];
             
+            // Highlight current segment during spin
+            const isHighlighted = this.currentHighlight === i;
+            
             // Draw segment with gradient
             this.ctx.beginPath();
             this.ctx.arc(0, 0, radius, startAngle, endAngle);
@@ -273,8 +276,14 @@ class RomanticRoulette {
             
             // Create beautiful gradient for each segment
             const segmentGradient = this.ctx.createRadialGradient(0, 0, 0, 0, 0, radius);
-            segmentGradient.addColorStop(0, '#FFFFFF');
-            segmentGradient.addColorStop(0.3, color);
+            if (isHighlighted) {
+                segmentGradient.addColorStop(0, '#FFFF00');
+                segmentGradient.addColorStop(0.3, '#FFD700');
+                segmentGradient.addColorStop(1, color);
+            } else {
+                segmentGradient.addColorStop(0, '#FFFFFF');
+                segmentGradient.addColorStop(0.3, color);
+            }
             segmentGradient.addColorStop(1, color);
             this.ctx.fillStyle = segmentGradient;
             this.ctx.fill();
@@ -443,45 +452,61 @@ class RomanticRoulette {
         this.isSpinning = true;
         const spinBtn = document.getElementById('spin-btn');
         spinBtn.disabled = true;
-        spinBtn.textContent = 'Girando... 💫';
+        spinBtn.textContent = '🎯 Girando... 💫';
         
         // Create spinning effect
         this.createSpinParticles();
         
+        // Add pointer animation
+        const pointer = document.querySelector('.wheel-pointer');
+        pointer.classList.add('spinning');
+        
         // Calculate random result
         const segments = this.options.length;
         const segmentAngle = 360 / segments;
-        const randomSpins = 5 + Math.random() * 5;
+        const randomSpins = 8 + Math.random() * 4; // More spins
         const randomSegment = Math.floor(Math.random() * segments);
         const finalRotation = 360 * randomSpins + (360 - randomSegment * segmentAngle - segmentAngle / 2);
         
         // Smooth animation
         const startTime = Date.now();
-        const duration = 3000;
+        const duration = 5500; // Much slower for suspense
         const startRotation = this.rotation;
+        
+        let lastSegment = -1;
         
         const animate = () => {
             const elapsed = Date.now() - startTime;
             const progress = Math.min(elapsed / duration, 1);
             
-            // Easing function for smooth deceleration
-            const easeOut = 1 - Math.pow(1 - progress, 3);
+            // Advanced easing with dramatic slowdown
+            const easeOut = progress < 0.7 ? 
+                Math.pow(progress / 0.7, 2) * 0.95 : 
+                0.95 + (1 - 0.95) * Math.pow((progress - 0.7) / 0.3, 4);
             
             this.rotation = startRotation + (finalRotation - startRotation) * easeOut;
             this.drawWheel();
             
+            // Add tick sound effect when crossing segments
+            const currentSegment = Math.floor(((360 - (this.rotation % 360)) / segmentAngle)) % segments;
+            if (currentSegment !== lastSegment && progress > 0.1 && progress < 0.95) {
+                this.playTickSound();
+                this.highlightCurrentSegment(currentSegment);
+                lastSegment = currentSegment;
+            }
+            
             if (progress < 1) {
                 requestAnimationFrame(animate);
             } else {
+                pointer.classList.remove('spinning');
                 this.showResult(randomSegment);
                 this.isSpinning = false;
                 spinBtn.disabled = false;
-                spinBtn.textContent = '🎯 Girar ruleta';
+                spinBtn.textContent = '🎯 Girar Ruleta';
             }
         };
         
         animate();
-    }
 
     showResult(segmentIndex) {
         const result = this.options[segmentIndex];
@@ -670,6 +695,37 @@ class RomanticRoulette {
         } catch (error) {
             console.log('Audio not supported');
         }
+    }
+    
+    playTickSound() {
+        try {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+            oscillator.type = 'square';
+            
+            gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+            gainNode.gain.linearRampToValueAtTime(0.1, audioContext.currentTime + 0.01);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.1);
+        } catch (error) {
+            console.log('Audio not supported');
+        }
+    }
+    
+    highlightCurrentSegment(segmentIndex) {
+        // Add visual highlight effect
+        this.currentHighlight = segmentIndex;
+        setTimeout(() => {
+            this.currentHighlight = null;
+        }, 150);
     }
 }
 
