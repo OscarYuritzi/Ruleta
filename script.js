@@ -144,6 +144,8 @@ class RomanticRoulette {
         }
 
         try {
+            console.log('🔄 Iniciando conexión en tiempo real...');
+            
             // Suscribirse a cambios en tiempo real
             this.realtimeChannel = supabaseModule.supabase
                 .channel('realtime-roulettes')
@@ -152,17 +154,20 @@ class RomanticRoulette {
                     schema: 'public',
                     table: 'realtime_sessions'
                 }, (payload) => {
+                    console.log('📡 Cambio detectado:', payload);
                     this.handleRealtimeUpdate(payload);
                 })
                 .subscribe();
+                
+            console.log('✅ Conexión en tiempo real establecida');
 
             // Cargar sesiones activas iniciales
             await this.loadActiveSessions();
             
-            // Actualizar cada 30 segundos para mantener sesión activa
+            // Actualizar cada 10 segundos para mantener sesión activa y mejor sincronización
             setInterval(() => {
                 this.keepSessionAlive();
-            }, 30000);
+            }, 10000);
 
         } catch (error) {
             console.error('Error setting up realtime connection:', error);
@@ -185,23 +190,33 @@ class RomanticRoulette {
     handleRealtimeUpdate(payload) {
         const { eventType, new: newRecord, old: oldRecord } = payload;
         
+        console.log(`🔄 Procesando evento ${eventType}:`, newRecord?.user_name, newRecord?.is_spinning);
+        
         switch (eventType) {
             case 'INSERT':
                 this.activeSessions.push(newRecord);
+                console.log(`➕ Usuario conectado: ${newRecord.user_name}`);
                 break;
             case 'UPDATE':
                 const index = this.activeSessions.findIndex(s => s.id === newRecord.id);
                 if (index > -1) {
                     this.activeSessions[index] = newRecord;
                     
-                    // Sync wheel rotation and state from other users
+                    // Sincronizar con otros usuarios (no conmigo mismo)
                     if (newRecord.id !== this.currentSession?.id) {
+                        console.log(`🎯 Sincronizando con ${newRecord.user_name}:`, newRecord.is_spinning);
                         this.syncRemoteWheelState(newRecord);
+                        
+                        // Mostrar resultado si está disponible
+                        if (!newRecord.is_spinning && newRecord.last_result && !this.lastShownResult) {
+                            this.showRemoteResult(newRecord);
+                        }
                     }
                 }
                 break;
             case 'DELETE':
                 this.activeSessions = this.activeSessions.filter(s => s.id !== oldRecord.id);
+                console.log(`➖ Usuario desconectado: ${oldRecord.user_name}`);
                 break;
         }
         
@@ -209,27 +224,136 @@ class RomanticRoulette {
     }
 
     syncRemoteWheelState(remoteSession) {
-        // Only sync if we're on the same wheel type or if we don't have a wheel active
-        if (!this.wheelType || this.wheelType === remoteSession.wheel_type) {
-            // If someone else is spinning and we're on the same screen
-            if (remoteSession.is_spinning && document.getElementById('wheel-canvas') && !this.isSpinning) {
+        console.log(`🔄 Intentando sincronizar con ${remoteSession.user_name}...`);
+        
+        // Si alguien más está girando, sincronizar automáticamente
+        if (remoteSession.is_spinning && remoteSession.wheel_type && remoteSession.current_options?.length > 0) {
+            
+            // Cambiar a su tipo de ruleta si es diferente
+            if (this.wheelType !== remoteSession.wheel_type) {
+                console.log(`🎯 Cambiando a ruleta tipo: ${remoteSession.wheel_type}`);
+                this.selectWheelType(remoteSession.wheel_type);
+            }
+            
+            // Asegurar que estamos en la pantalla correcta
+            if (document.getElementById('wheel-selection') && !document.getElementById('wheel-selection').classList.contains('hidden')) {
+                document.getElementById('wheel-selection').classList.add('hidden');
+                document.getElementById('wheel-creator').classList.remove('hidden');
+                this.initCanvas();
+            }
+            
+            // Sincronizar opciones y rotación
+            if (!this.isSpinning) {
+                console.log(`🎡 Sincronizando ruleta de ${remoteSession.user_name}...`);
+                
                 // Sync their wheel type and options
-                if (remoteSession.wheel_type && remoteSession.current_options?.length > 0) {
-                    const wasOnSameType = this.wheelType === remoteSession.wheel_type;
-                    
-                    if (!wasOnSameType) {
-                        // Switch to their wheel type
-                        this.selectWheelType(remoteSession.wheel_type);
-                    }
-                    
-                    this.options = remoteSession.current_options;
-                    this.updateDisplay();
-                    
-                    // Animate rotation to match theirs (with slight delay for realism)
-                    this.animateToRotation(remoteSession.wheel_rotation);
-                }
+                this.options = [...remoteSession.current_options];
+                this.updateDisplay();
+                
+                // Mostrar indicador de que alguien está girando
+                this.showSpinningIndicator(remoteSession.user_name);
+                
+                // Animate rotation to match theirs
+                this.animateToRotation(remoteSession.wheel_rotation);
             }
         }
+    }
+    
+    showSpinningIndicator(userName) {
+        // Mostrar indicador de que alguien está girando
+        const indicator = document.createElement('div');
+        indicator.id = 'spinning-indicator';
+        indicator.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 20px 30px;
+            border-radius: 15px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            z-index: 1002;
+            border: 2px solid #e30070;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            animation: pulse 1s ease-in-out infinite;
+        `;
+        indicator.innerHTML = `🎯 ${userName} está girando...<br><small>¡Espera el resultado! 💫</small>`;
+        
+        // Remover indicador anterior si existe
+        const existing = document.getElementById('spinning-indicator');
+        if (existing) existing.remove();
+        
+        document.body.appendChild(indicator);
+        
+        // Remover después de 5 segundos
+        setTimeout(() => {
+            if (document.getElementById('spinning-indicator')) {
+                document.getElementById('spinning-indicator').remove();
+            }
+        }, 5000);
+    }
+    
+    showRemoteResult(session) {
+        if (this.lastShownResult === session.last_result) return; // No mostrar el mismo resultado dos veces
+        
+        console.log(`🎉 Mostrando resultado de ${session.user_name}: ${session.last_result}`);
+        this.lastShownResult = session.last_result;
+        
+        // Remover indicador de girando
+        const indicator = document.getElementById('spinning-indicator');
+        if (indicator) indicator.remove();
+        
+        // Crear notificación de resultado
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(145deg, rgba(0, 0, 0, 0.95), rgba(20, 20, 20, 0.9));
+            backdrop-filter: blur(20px);
+            color: white;
+            padding: 40px 50px;
+            border-radius: 20px;
+            text-align: center;
+            z-index: 1003;
+            border: 2px solid #e30070;
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.5);
+            max-width: 90vw;
+            animation: slideIn 0.5s ease-out;
+        `;
+        
+        notification.innerHTML = `
+            <div style="font-size: 3rem; margin-bottom: 15px;">🎉</div>
+            <div style="font-size: 1.3rem; font-weight: 600; color: #e30070; margin-bottom: 10px;">
+                Resultado de ${session.user_name}:
+            </div>
+            <div style="font-size: 1.8rem; font-weight: 700; margin-bottom: 20px; color: white;">
+                ${session.last_result}
+            </div>
+            <div style="font-size: 1.5rem;">✨💕🌟</div>
+            <button onclick="this.parentElement.remove()" style="
+                margin-top: 20px;
+                background: #e30070;
+                color: white;
+                border: none;
+                padding: 10px 20px;
+                border-radius: 25px;
+                cursor: pointer;
+                font-weight: 600;
+            ">Cerrar</button>
+        `;
+        
+        document.body.appendChild(notification);
+        
+        // Remover después de 10 segundos
+        setTimeout(() => {
+            if (notification.parentElement) {
+                notification.remove();
+            }
+        }, 10000);
     }
 
     animateToRotation(targetRotation) {
@@ -296,13 +420,13 @@ class RomanticRoulette {
             document.body.appendChild(activeUsersPanel);
         }
 
-        // Filtrar sesiones activas (últimos 5 minutos)
+        // Filtrar sesiones activas (último minuto para mayor precisión)
         const now = new Date();
-        const fiveMinutesAgo = new Date(now.getTime() - 5 * 60 * 1000);
+        const oneMinuteAgo = new Date(now.getTime() - 1 * 60 * 1000);
         
         const recentSessions = this.activeSessions.filter(session => {
             const lastActivity = new Date(session.last_activity);
-            return lastActivity > fiveMinutesAgo;
+            return lastActivity > oneMinuteAgo;
         });
 
         if (recentSessions.length === 0) {
@@ -870,6 +994,8 @@ class RomanticRoulette {
         const resultIndex = Math.floor(normalizedRotation / segmentAngle) % segments;
         const result = this.options[resultIndex];
         
+        console.log(`🎯 Notificando fin de giro. Resultado: ${result}`);
+        
         if (this.currentSession) {
             try {
                 const { updateSpinningState } = await import('./src/supabase.js');
@@ -881,6 +1007,7 @@ class RomanticRoulette {
                     this.options,
                     result
                 );
+                console.log('✅ Estado de fin de giro enviado correctamente');
             } catch (error) {
                 console.error('Error notifying spin end:', error);
             }

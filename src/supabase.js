@@ -102,7 +102,7 @@ export async function getActiveSessions() {
     const { data, error } = await supabase
       .from('realtime_sessions')
       .select('*')
-      .gte('last_activity', new Date(Date.now() - 5 * 60 * 1000).toISOString()) // Últimos 5 minutos
+      .gte('last_activity', new Date(Date.now() - 1 * 60 * 1000).toISOString()) // Último minuto
       .order('last_activity', { ascending: false })
 
     return { data, error }
