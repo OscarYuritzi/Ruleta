@@ -175,7 +175,7 @@ class RomanticRoulette {
         // Get container width for responsive sizing
         const container = this.canvas.parentElement;
         const containerWidth = container.offsetWidth;
-        const maxSize = Math.min(containerWidth - 40, 800); // Leave some padding
+        const maxSize = Math.min(containerWidth - 20, 1000); // Menos padding, tamaño máximo mayor
         
         // Set actual canvas size for crisp rendering
         const scale = window.devicePixelRatio || 1;

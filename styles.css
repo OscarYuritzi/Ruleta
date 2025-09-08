@@ -582,7 +582,7 @@ body {
     width: 100%;
     height: auto;
     display: block;
-    max-width: 800px; /* Desktop */
+    max-width: 1000px; /* Desktop más grande */
     aspect-ratio: 1;
 }
 
@@ -791,7 +791,7 @@ body {
     #wheel-canvas {
         border: 4px solid #ffffff;
         outline: 2px solid #e30052;
-        max-width: 650px; /* Aumentado de 500px a 650px */
+        max-width: 750px; /* Tablet mucho más grande */
     }
     
     .logo {
@@ -904,7 +904,7 @@ body {
     #wheel-canvas {
         border: 3px solid #ffffff;
         outline: 2px solid #e30052;
-        max-width: 500px; /* Aumentado de 380px a 500px */
+        max-width: 600px; /* Móvil más grande */
     }
     
     .container {
