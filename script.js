@@ -741,7 +741,7 @@ class RomanticRoulette {
             // Responsive text size based on segments and screen size
             let baseFontSize = size > 600 ? 20 : size > 400 ? 16 : 14;
             const fontSize = segments > 12 ? baseFontSize - 4 : segments > 8 ? baseFontSize - 2 : baseFontSize;
-            this.ctx.font = \`bold ${fontSize}px 'Poppins', Arial, sans-serif`;
+            this.ctx.font = `bold ${fontSize}px 'Poppins', Arial, sans-serif`;
             
             // Text position - well within segment
             const textRadius = radius * 0.7;
@@ -763,7 +763,7 @@ class RomanticRoulette {
             
             // Para la ruleta sorpresa, solo mostrar el emoji grande
             if (this.wheelType === 'surprise') {
-                this.ctx.font = \`${fontSize + Math.floor(size * 0.02)}px Arial`; // Emojis responsive
+                this.ctx.font = `${fontSize + Math.floor(size * 0.02)}px Arial`; // Emojis responsive
                 this.ctx.fillText(displayText, textRadius, 0);
             } else {
                 // Handle text length
@@ -820,7 +820,7 @@ class RomanticRoulette {
         // Center heart with glow effect
         this.ctx.textAlign = 'center';
         this.ctx.textBaseline = 'middle';
-        this.ctx.font = \`bold ${Math.floor(size * 0.045)}px Arial`; // Responsive heart size
+        this.ctx.font = `bold ${Math.floor(size * 0.045)}px Arial`; // Responsive heart size
         this.ctx.fillStyle = '#e30070';
         this.ctx.strokeStyle = '#e30070';
         this.ctx.fillText('💕', centerX, centerY);
@@ -847,7 +847,7 @@ class RomanticRoulette {
         
         // Draw message
         this.ctx.fillStyle = '#ffffff';
-        this.ctx.font = \`bold ${Math.floor(size * 0.033)}px "Poppins", Arial, sans-serif`; // Responsive text
+        this.ctx.font = `bold ${Math.floor(size * 0.033)}px "Poppins", Arial, sans-serif`; // Responsive text
         this.ctx.textAlign = 'center';
         this.ctx.textBaseline = 'middle';
         this.ctx.fillText('Agrega opciones', centerX, centerY - 10);
@@ -862,7 +862,7 @@ class RomanticRoulette {
         this.ctx.strokeStyle = '#e30070';
         this.ctx.lineWidth = 4;
         this.ctx.stroke();
-        this.ctx.font = \`${Math.floor(size * 0.045)}px Arial`; // Responsive heart
+        this.ctx.font = `${Math.floor(size * 0.045)}px Arial`; // Responsive heart
         this.ctx.fillStyle = '#e30070';
         this.ctx.strokeStyle = '#e30070';
         this.ctx.fillText('💕', centerX, centerY);
