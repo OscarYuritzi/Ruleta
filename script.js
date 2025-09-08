@@ -512,7 +512,7 @@ function showPartnerResult(partnerName, result) {
             <div style="margin-bottom: 15px; color: #e30070; font-size: 1.2rem;">
                 🎯 Resultado de ${partnerName}:
             </div>
-            <div style="font-size: 1.8rem; font-weight: bold;">
+            <div style="font-size: 1.6rem; font-weight: bold; line-height: 1.4;">
                 ${result}
             </div>
         `;
@@ -664,14 +664,14 @@ function loadMysteryWheel() {
 // Load surprise wheel
 function loadSurpriseWheel() {
     const surpriseOptions = [
-        '😊📸',
-        '💕🎭', 
-        '❤️💌',
-        '🎵🎤',
-        '😍💭',
-        '🌹💻',
-        '📝✍️',
-        '🎨🖌️'
+        'Envía una foto tuya sonriendo 😊',
+        'Cuéntame tu recuerdo favorito de nosotros 💕',
+        'Escríbeme una carta de amor ❤️',
+        'Canta o dedícame una canción 🎵',
+        'Dime 3 cosas que más te gustan de mí 😍',
+        'Envía una foto de algo que te recuerde a mí 🌹',
+        'Escribe un poema romántico 📝',
+        'Dibuja algo para mí 🎨'
     ];
     currentOptions = surpriseOptions;
     updateOptionsDisplay();
@@ -844,8 +844,17 @@ function drawWheel() {
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         
-        // Truncate long text
-        const displayText = option.length > 15 ? option.substring(0, 15) + '...' : option;
+        // For surprise wheel, show only emojis on the wheel (for mystery)
+        // For other wheels, show full text (truncated if needed)
+        let displayText = option;
+        if (currentWheelType === 'surprise') {
+            // Extract emoji from the option text
+            const emojiMatch = option.match(/[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu);
+            displayText = emojiMatch ? emojiMatch[0] : '🎁';
+        } else {
+            displayText = option.length > 15 ? option.substring(0, 15) + '...' : option;
+        }
+        
         ctx.fillText(displayText, 0, 0);
         
         ctx.restore();
@@ -949,7 +958,7 @@ function showResult(result) {
         <div style="margin-bottom: 15px; color: #e30070; font-size: 1.2rem;">
             🎯 Tu resultado:
         </div>
-        <div style="font-size: 1.8rem; font-weight: bold;">
+        <div style="font-size: 1.6rem; font-weight: bold; line-height: 1.4;">
             ${result}
         </div>
     `;
