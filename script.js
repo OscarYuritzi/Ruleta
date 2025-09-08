@@ -124,16 +124,20 @@ class RomanticRoulette {
         this.initCanvas();
         
         const title = document.getElementById('creator-title');
+        const optionsPanel = document.querySelector('.options-panel');
         
         switch (type) {
             case 'mystery':
                 title.textContent = 'Ruleta Misteriosa 🎁✨';
+                optionsPanel.style.display = 'block';
                 break;
             case 'normal':
                 title.textContent = 'Ruleta Normal 🎀💕';
+                optionsPanel.style.display = 'block';
                 break;
             case 'surprise':
                 title.textContent = 'Ruleta Sorpresa 💗🌟';
+                optionsPanel.style.display = 'none'; // Ocultar panel de opciones
                 this.loadSurpriseContent();
                 break;
         }
@@ -142,16 +146,28 @@ class RomanticRoulette {
     }
 
     loadSurpriseContent() {
-        // Combine all surprise content categories
-        const allContent = [
+        // Solo stickers/emojis variados para la ruleta sorpresa
+        const surpriseStickers = [
+            '💕', '💖', '💗', '💓', '💘', '💝', 
+            '❤️', '🧡', '💛', '💚', '💙', '💜',
+            '🌟', '✨', '💫', '⭐', '🌠', '💎',
+            '🎁', '🎉', '🎊', '🎈', '🎀', '🌹',
+            '🦋', '🌈', '🔥', '💋', '👑', '🎭',
+            '🍓', '🍑', '🍯', '🍷', '🥂', '🍾'
+        ];
+        
+        // Shuffle and select random items
+        this.options = this.shuffleArray(surpriseStickers).slice(0, 16);
+        
+        // Contenido oculto real que se revelará al girar
+        this.hiddenContent = [
             ...this.surpriseContent.romantic_questions,
             ...this.surpriseContent.virtual_challenges,
             ...this.surpriseContent.romantic_activities,
             ...this.surpriseContent.sweet_exchanges
         ];
+        this.hiddenContent = this.shuffleArray(this.hiddenContent);
         
-        // Shuffle and select random items
-        this.options = this.shuffleArray(allContent).slice(0, 12);
         this.updateDisplay();
         this.drawWheel();
     }
@@ -162,8 +178,8 @@ class RomanticRoulette {
         
         // Set actual canvas size for crisp rendering
         const scale = window.devicePixelRatio || 1;
-        this.canvas.width = 600 * scale;
-        this.canvas.height = 600 * scale;
+        this.canvas.width = 800 * scale;
+        this.canvas.height = 800 * scale;
         this.ctx.scale(scale, scale);
         
         this.drawWheel();
@@ -242,9 +258,9 @@ class RomanticRoulette {
             return;
         }
         
-        const centerX = 300;
-        const centerY = 300;
-        const radius = 250;
+        const centerX = 400; // Increased for bigger canvas
+        const centerY = 400; // Increased for bigger canvas
+        const radius = 350;  // Much bigger radius
         const segments = this.options.length;
         const anglePerSegment = (2 * Math.PI) / segments;
         
@@ -254,7 +270,7 @@ class RomanticRoulette {
         this.ctx.clearRect(0, 0, 600, 600);
         this.ctx.save();
         this.ctx.translate(centerX, centerY);
-        this.ctx.rotate(this.rotation * Math.PI / 180);
+        this.ctx.clearRect(0, 0, 800, 800);
         
         // Draw segments
         for (let i = 0; i < segments; i++) {
@@ -285,7 +301,7 @@ class RomanticRoulette {
             const fontSize = segments > 12 ? 12 : segments > 8 ? 14 : 16;
             this.ctx.font = `bold ${fontSize}px 'Poppins', Arial, sans-serif`;
             
-            // Text position - well within segment
+            const fontSize = segments > 12 ? 16 : segments > 8 ? 20 : 24;
             const textRadius = radius * 0.65;
             
             // Texto con alto contraste
@@ -296,6 +312,11 @@ class RomanticRoulette {
             let displayText;
             if (this.wheelType === 'mystery') {
                 displayText = '🎁';
+            } else if (this.wheelType === 'surprise') {
+                // Solo mostrar el emoji/sticker, nunca el contenido real
+                displayText = this.options[i];
+                // Hacer los emojis más grandes para surprise
+                this.ctx.font = `${fontSize + 8}px Arial`;
             } else {
                 displayText = this.options[i];
             }
@@ -303,7 +324,7 @@ class RomanticRoulette {
             // Handle text length
             const maxLength = segments > 10 ? 15 : segments > 6 ? 20 : 30;
             
-            if (displayText.length <= maxLength) {
+            if (displayText.length <= maxLength || this.wheelType === 'surprise') {
                 // Contorno blanco para legibilidad
                 this.ctx.strokeText(displayText, textRadius, 0);
                 this.ctx.fillText(displayText, textRadius, 0);
@@ -351,7 +372,7 @@ class RomanticRoulette {
         
         // Center heart with glow effect
         this.ctx.textAlign = 'center';
-        this.ctx.textBaseline = 'middle';
+        this.ctx.arc(centerX, centerY, 60, 0, 2 * Math.PI);
         this.ctx.font = 'bold 28px Arial';
         this.ctx.fillStyle = '#e30052';
         this.ctx.strokeStyle = '#e30052';
@@ -361,11 +382,11 @@ class RomanticRoulette {
     drawEmptyWheel() {
         if (!this.ctx) return;
         
-        const centerX = 300;
-        const centerY = 300;
-        const radius = 250;
+        const centerX = 400; // Bigger canvas
+        const centerY = 400; // Bigger canvas  
+        const radius = 350;  // Bigger radius
         
-        this.ctx.clearRect(0, 0, 600, 600);
+        this.ctx.clearRect(0, 0, 800, 800);
         
         // Draw empty circle
         this.ctx.beginPath();
@@ -378,15 +399,15 @@ class RomanticRoulette {
         
         // Draw message
         this.ctx.fillStyle = '#1a1a1a';
-        this.ctx.font = 'bold 20px "Poppins", Arial, sans-serif';
+        this.ctx.font = 'bold 28px "Poppins", Arial, sans-serif';
         this.ctx.textAlign = 'center';
-        this.ctx.textBaseline = 'middle';
-        this.ctx.fillText('Agrega opciones', centerX, centerY - 10);
-        this.ctx.fillText('románticas 💕', centerX, centerY + 15);
+        const centerGradient = this.ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, 60);
+        this.ctx.fillText('Agrega opciones', centerX, centerY - 15);
+        this.ctx.fillText('románticas 💕', centerX, centerY + 20);
         
         // Draw center
         this.ctx.beginPath();
-        this.ctx.arc(centerX, centerY, 45, 0, 2 * Math.PI);
+        this.ctx.arc(centerX, centerY, 60, 0, 2 * Math.PI);
         this.ctx.fillStyle = '#ffffff';
         this.ctx.fill();
         this.ctx.strokeStyle = '#e30052';
@@ -397,7 +418,7 @@ class RomanticRoulette {
         this.ctx.strokeStyle = '#e30052';
         this.ctx.fillText('💕', centerX, centerY);
     }
-
+        this.ctx.font = 'bold 42px Arial';
     spinWheel() {
         if (this.isSpinning || this.options.length < 2) return;
         
@@ -416,13 +437,13 @@ class RomanticRoulette {
         // Calculate random result
         const segments = this.options.length;
         const segmentAngle = 360 / segments;
-        const randomSpins = 8 + Math.random() * 4; // More spins
+        const randomSpins = 10 + Math.random() * 8; // MAS VUELTAS para mayor suspenso
         const randomSegment = Math.floor(Math.random() * segments);
         const finalRotation = 360 * randomSpins + (360 - randomSegment * segmentAngle - segmentAngle / 2);
         
         // Smooth animation with gradual deceleration
         const startTime = Date.now();
-        const duration = 4000; // Optimal duration for smooth deceleration
+        const duration = 8000; // MUCHO MAS TIEMPO girando - 8 segundos
         const startRotation = this.rotation;
         
         let lastSegment = -1;
@@ -461,7 +482,15 @@ class RomanticRoulette {
     }
 
     showResult(segmentIndex) {
-        const result = this.options[segmentIndex];
+        let result;
+        
+        if (this.wheelType === 'surprise') {
+            // Para surprise wheel, mostrar el contenido oculto real
+            result = this.hiddenContent[segmentIndex % this.hiddenContent.length];
+        } else {
+            result = this.options[segmentIndex];
+        }
+        
         const modal = document.getElementById('result-modal');
         const resultText = document.getElementById('result-text');
         
