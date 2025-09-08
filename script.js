@@ -76,6 +76,26 @@ function showCoupleConnection() {
             </div>
         </div>
     `;
+    
+    // Insert into main container
+    const mainContainer = document.querySelector('.main-container .container');
+    mainContainer.insertBefore(coupleConnectionScreen, wheelSelection);
+    
+    // Create partner status element
+    createPartnerStatusElement();
+    
+    // Add event listeners
+    document.getElementById('connect-couple').addEventListener('click', connectCouple);
+    document.getElementById('user-name').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            document.getElementById('couple-name').focus();
+        }
+    });
+    document.getElementById('couple-name').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            connectCouple();
+        }
+    });
 }
 
 // Connect couple function
@@ -644,14 +664,14 @@ function loadMysteryWheel() {
 // Load surprise wheel
 function loadSurpriseWheel() {
     const surpriseOptions = [
-        'Envía una foto tuya sonriendo 😊',
-        'Cuéntame tu recuerdo favorito de nosotros 💕',
-        'Escríbeme una carta de amor ❤️',
-        'Cántame una canción 🎵',
-        'Dime lo que más amas de mí 😍',
-        'Envíame una flor virtual 🌹',
-        'Escríbeme un poema 📝',
-        'Dibújame algo bonito 🎨'
+        '😊📸',
+        '💕🎭', 
+        '❤️💌',
+        '🎵🎤',
+        '😍💭',
+        '🌹💻',
+        '📝✍️',
+        '🎨🖌️'
     ];
     currentOptions = surpriseOptions;
     updateOptionsDisplay();
@@ -714,41 +734,6 @@ function updateOptionsDisplay() {
                 const index = parseInt(e.target.dataset.index);
                 removeOption(index);
             });
-        });
-    } else {
-        // For mystery and surprise wheels, show the options list but make it read-only
-        optionsPanel.style.display = 'block';
-        
-        const optionsList = document.getElementById('options-list');
-        optionsList.innerHTML = '';
-        
-        if (currentWheelType === 'surprise') {
-            // Show what the surprise options are (but keep them as a surprise in the wheel)
-            const surprisePreview = document.createElement('div');
-            surprisePreview.className = 'surprise-preview';
-            surprisePreview.innerHTML = `
-                <h4 style="color: #e30070; margin-bottom: 15px;">🎁 Opciones de Sorpresa:</h4>
-                <div style="display: grid; gap: 8px; font-size: 0.9rem; color: #cccccc;">
-                    ${currentOptions.map(option => `<div style="padding: 8px; background: rgba(227, 0, 112, 0.1); border-radius: 8px; border: 1px solid rgba(227, 0, 112, 0.3);">• ${option}</div>`).join('')}
-                </div>
-            `;
-            optionsList.appendChild(surprisePreview);
-        }
-        
-        if (currentWheelType === 'mystery') {
-            const mysteryMessage = document.createElement('div');
-            mysteryMessage.className = 'mystery-message';
-            mysteryMessage.innerHTML = `
-                <div style="text-align: center; padding: 20px; color: #e30070; font-size: 1.1rem;">
-                    🎁 ¡Ruleta Misteriosa! <br>
-                    <span style="font-size: 0.9rem; color: #cccccc;">Solo descubrirás qué hay cuando gires...</span>
-                </div>
-            `;
-            optionsList.appendChild(mysteryMessage);
-        }
-    }
-}
-        });
     }
 }
 
