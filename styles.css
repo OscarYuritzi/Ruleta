@@ -582,7 +582,7 @@ body {
     width: 100%;
     height: auto;
     display: block;
-    max-width: 800px;
+    max-width: 800px; /* Desktop */
     aspect-ratio: 1;
 }
 
@@ -784,14 +784,14 @@ body {
     }
     
     .wheel-container {
-        padding: 0 10px;
+        padding: 0 5px; /* Menos padding para más espacio */
         gap: 10px;
     }
     
     #wheel-canvas {
         border: 4px solid #ffffff;
         outline: 2px solid #e30052;
-        max-width: 500px;
+        max-width: 650px; /* Aumentado de 500px a 650px */
     }
     
     .logo {
@@ -831,6 +831,10 @@ body {
     
     .wheel-creator {
         padding: 30px 20px;
+    }
+    
+    .creator-content {
+        gap: 20px; /* Reducir gap para dar más espacio a la ruleta */
     }
     
     #creator-title {
@@ -893,18 +897,30 @@ body {
     }
     
     .wheel-container {
-        padding: 0 5px;
+        padding: 0; /* Sin padding para maximizar espacio */
         gap: 8px;
     }
     
     #wheel-canvas {
         border: 3px solid #ffffff;
         outline: 2px solid #e30052;
-        max-width: 380px;
+        max-width: 500px; /* Aumentado de 380px a 500px */
+    }
+    
+    .container {
+        padding: 0 10px; /* Reducir padding del contenedor principal */
     }
     
     .wheel-card {
         padding: 25px 15px;
+    }
+    
+    .creator-content {
+        gap: 15px; /* Aún menos gap en móviles */
+    }
+    
+    .wheel-creator {
+        padding: 20px 15px; /* Menos padding en móviles */
     }
     
     .card-icon {
