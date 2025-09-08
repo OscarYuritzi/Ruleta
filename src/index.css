@@ -53,6 +53,19 @@ canvas {
     min-height: 44px;
     min-width: 44px;
   }
+  
+  /* Smaller wheel on mobile */
+  canvas {
+    width: 280px !important;
+    height: 280px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  canvas {
+    width: 240px !important;
+    height: 240px !important;
+  }
 }
 
 /* Improved scrollbar styling */

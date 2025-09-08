@@ -476,42 +476,42 @@ function App() {
           {/* Wheel panel */}
           <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-6 shadow-lg">
             <div className="flex flex-col items-center">
-              {/* Wheel container - Mobile-first responsive sizing */}
-              <div className="relative mb-6">
+              {/* Wheel container - Increased size and better spacing */}
+              <div className="relative mb-8">
                 {/* Pointer */}
-                <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1 z-10 text-2xl">
+                <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 z-10 text-3xl">
                   📍
                 </div>
                 
-                {/* Canvas - Responsive sizing */}
+                {/* Canvas - Larger responsive sizing */}
                 <canvas
                   ref={canvasRef}
-                  className="rounded-full shadow-xl border-4 border-white transition-transform duration-3000 ease-out w-72 h-72 sm:w-80 sm:h-80 md:w-96 md:h-96"
+                  className="rounded-full shadow-xl border-4 border-white transition-transform duration-3000 ease-out w-80 h-80 sm:w-96 sm:h-96 md:w-[28rem] md:h-[28rem]"
                   style={{
                     transform: `rotate(${rotation}deg)`,
                     maxWidth: '100%',
                     height: 'auto'
                   }}
                 />
-                
-                {/* Center spin button - Properly sized and positioned */}
-                <button
-                  onClick={spinWheel}
-                  disabled={isSpinning || options.length < 2}
-                  className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-gradient-to-r from-pink-500 to-purple-600 text-white px-4 py-2 sm:px-6 sm:py-3 rounded-full font-bold text-sm sm:text-base shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed border-4 border-white z-20"
-                >
-                  {isSpinning ? (
-                    <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      <span className="hidden sm:inline">Girando...</span>
-                    </div>
-                  ) : options.length < 2 ? (
-                    <span className="text-xs sm:text-sm">Agrega opciones</span>
-                  ) : (
-                    <span>GIRAR 💕</span>
-                  )}
-                </button>
               </div>
+
+              {/* Spin button - Moved outside and below the wheel */}
+              <button
+                onClick={spinWheel}
+                disabled={isSpinning || options.length < 2}
+                className="bg-gradient-to-r from-pink-500 to-purple-600 text-white px-8 py-4 rounded-full font-bold text-lg shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed border-4 border-white hover:scale-105 mb-4"
+              >
+                {isSpinning ? (
+                  <div className="flex items-center gap-3">
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <span>Girando... 💫</span>
+                  </div>
+                ) : options.length < 2 ? (
+                  <span>Agrega más opciones ✨</span>
+                ) : (
+                  <span>GIRAR RULETA 💕</span>
+                )}
+              </button>
 
               {/* Wheel info */}
               <div className="text-center text-sm text-gray-600">
