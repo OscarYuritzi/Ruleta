@@ -69,6 +69,9 @@ class RomanticRoulette {
         this.loadSavedWheels();
         this.startParticleSystem();
         
+        // Pedir nombre de usuario al iniciar
+        this.requestUserName();
+        
         // Agregar event listener para resize
         window.addEventListener('resize', () => {
             if (this.canvas && this.ctx) {
@@ -84,17 +87,19 @@ class RomanticRoulette {
         while (!this.userName) {
             const name = prompt('¡Bienvenido a las Ruletas del Amor! 💕\n\n¿Cómo te llamas? (Los demás usuarios podrán verte cuando gires una ruleta)');
             
+                            const { getUserSession } = await import('./src/supabase.js');
             if (name && name.trim().length > 0) {
                 this.userName = name.trim();
                 
                 // Crear sesión en Supabase
+                                this.initRealtimeConnection();
                 try {
                     const { data, error } = await getUserSession(this.userName);
                     if (data && !error) {
                         this.currentSession = data;
                         this.showWelcomeMessage();
                     } else {
-                        console.error('Error creating session:', error);
+                            alert('Error de conexión. Por favor conecta Supabase primero.');
                         alert('Error conectando con el servidor. Intenta recargar la página.');
                     }
                 } catch (error) {
@@ -132,14 +137,15 @@ class RomanticRoulette {
     }
 
     async initRealtimeConnection() {
-        if (!supabase) {
+        const supabaseModule = await import('./src/supabase.js');
+        if (!supabaseModule.supabase) {
             console.error('Supabase no está configurado');
             return;
         }
 
         try {
             // Suscribirse a cambios en tiempo real
-            this.realtimeChannel = supabase
+            this.realtimeChannel = supabaseModule.supabase
                 .channel('realtime-roulettes')
                 .on('postgres_changes', {
                     event: '*',
@@ -165,6 +171,7 @@ class RomanticRoulette {
 
     async loadActiveSessions() {
         try {
+            const { getActiveSessions } = await import('./src/supabase.js');
             const { data, error } = await getActiveSessions();
             if (data && !error) {
                 this.activeSessions = data;
@@ -272,6 +279,7 @@ class RomanticRoulette {
     async keepSessionAlive() {
         if (this.currentSession) {
             try {
+                const { updateSpinningState } = await import('./src/supabase.js');
                 await updateSpinningState(
                     this.currentSession.id,
                     this.isSpinning,
@@ -345,6 +353,7 @@ class RomanticRoulette {
     async cleanup() {
         if (this.currentSession && this.currentSession.id) {
             try {
+                const { removeUserSession } = await import('./src/supabase.js');
                 await removeUserSession(this.currentSession.id);
             } catch (error) {
                 console.error('Error during cleanup:', error);
@@ -758,6 +767,7 @@ class RomanticRoulette {
                 pointer.classList.remove('spinning');
                 this.showResult(randomSegment);
                 this.isSpinning = false;
+                this.notifySpinEnd(); // Notificar que terminó de girar
                 spinBtn.disabled = false;
                 spinBtn.textContent = '🎯 Girar Ruleta';
             }
@@ -769,6 +779,7 @@ class RomanticRoulette {
     async notifySpinStart() {
         if (this.currentSession) {
             try {
+                const { updateSpinningState } = await import('./src/supabase.js');
                 await updateSpinningState(
                     this.currentSession.id,
                     true,
@@ -785,6 +796,7 @@ class RomanticRoulette {
     async notifySpinEnd() {
         if (this.currentSession) {
             try {
+                const { updateSpinningState } = await import('./src/supabase.js');
                 await updateSpinningState(
                     this.currentSession.id,
                     false,
