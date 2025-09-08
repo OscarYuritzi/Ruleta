@@ -3,10 +3,23 @@ import { createClient } from '@supabase/supabase-js'
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
-export const supabase = createClient(supabaseUrl, supabaseKey)
+export const supabase = (supabaseUrl && supabaseKey) ? createClient(supabaseUrl, supabaseKey) : null
+
+// Helper function to check if Supabase is configured
+function checkSupabaseConfig() {
+  if (!supabase) {
+    console.warn('Supabase not configured. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables.')
+    return false
+  }
+  return true
+}
 
 // Función para obtener o crear sesión de usuario
 export async function getUserSession(userName) {
+  if (!checkSupabaseConfig()) {
+    return { data: null, error: new Error('Supabase not configured') }
+  }
+  
   try {
     // Primero verificar si ya existe una sesión activa para este usuario
     const { data: sessions, error: fetchError } = await supabase
@@ -47,6 +60,10 @@ export async function getUserSession(userName) {
 
 // Función para actualizar estado de giro
 export async function updateSpinningState(sessionId, isSpinning, wheelRotation = 0, wheelType = null, options = [], result = null) {
+  if (!checkSupabaseConfig()) {
+    return { data: null, error: new Error('Supabase not configured') }
+  }
+  
   try {
     const updateData = {
       is_spinning: isSpinning,
@@ -77,6 +94,10 @@ export async function updateSpinningState(sessionId, isSpinning, wheelRotation =
 
 // Función para obtener todas las sesiones activas
 export async function getActiveSessions() {
+  if (!checkSupabaseConfig()) {
+    return { data: [], error: new Error('Supabase not configured') }
+  }
+  
   try {
     const { data, error } = await supabase
       .from('realtime_sessions')
@@ -93,6 +114,10 @@ export async function getActiveSessions() {
 
 // Función para eliminar sesión al salir
 export async function removeUserSession(sessionId) {
+  if (!checkSupabaseConfig()) {
+    return { error: new Error('Supabase not configured') }
+  }
+  
   try {
     const { error } = await supabase
       .from('realtime_sessions')
