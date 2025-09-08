@@ -70,8 +70,7 @@ export async function updateSpinningState(sessionId, isSpinning, wheelRotation =
       wheel_rotation: wheelRotation,
       wheel_type: wheelType,
       current_options: options,
-      last_activity: new Date().toISOString(),
-      spin_start_time: isSpinning ? new Date().toISOString() : null
+      last_activity: new Date().toISOString()
     };
     
     // Only add result if provided (when spinning ends)
@@ -84,6 +83,7 @@ export async function updateSpinningState(sessionId, isSpinning, wheelRotation =
       .update(updateData)
       .eq('id', sessionId)
       .select()
+      .single()
 
     return { data, error }
   } catch (error) {
