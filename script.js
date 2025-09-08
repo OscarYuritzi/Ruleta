@@ -671,7 +671,7 @@ class RomanticRoulette {
             const item = document.createElement('div');
             item.className = 'option-item fade-in';
             
-            const optionText = this.wheelType === 'mystery' ? \`Opción ${index + 1} 🎁` : option;
+            const optionText = this.wheelType === 'mystery' ? `Opción ${index + 1} 🎁` : option;
             
             item.innerHTML = `
                 <span class="option-text">${optionText}</span>
