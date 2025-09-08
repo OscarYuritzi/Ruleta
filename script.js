@@ -10,6 +10,8 @@ let isSpinning = false;
 let wheelRotation = 0;
 let realtimeChannel = null;
 let lastProcessedResult = null;
+let connectedPartners = [];
+let partnerStatusElement = null;
 
 // DOM Elements
 const wheelSelection = document.getElementById('wheel-selection');
@@ -79,6 +81,9 @@ function showCoupleConnection() {
     const mainContainer = document.querySelector('.main-container .container');
     mainContainer.insertBefore(coupleConnectionScreen, wheelSelection);
     
+    // Create partner status element
+    createPartnerStatusElement();
+    
     // Add event listeners
     document.getElementById('connect-couple').addEventListener('click', connectCouple);
     document.getElementById('user-name').addEventListener('keypress', (e) => {
@@ -139,6 +144,9 @@ async function connectCouple() {
         
         // Setup realtime subscription
         await setupRealtimeSubscription();
+        
+        // Check for existing partners and notify
+        await checkExistingPartners();
         
         // Hide connection screen and show main app
         coupleConnectionScreen.classList.add('hidden');
@@ -239,6 +247,113 @@ async function setupRealtimeSubscription() {
     console.log(`✅ Suscripción configurada para pareja: ${currentCouple}`);
 }
 
+// Check for existing partners in the couple
+async function checkExistingPartners() {
+    if (!supabase || !currentCouple) return;
+    
+    try {
+        const { data: sessions, error } = await supabase
+            .from('realtime_sessions')
+            .select('*')
+            .eq('couple_name', currentCouple)
+            .neq('user_name', currentUser)
+            .gte('last_activity', new Date(Date.now() - 5 * 60 * 1000).toISOString());
+        
+        if (!error && sessions && sessions.length > 0) {
+            connectedPartners = sessions.map(s => s.user_name);
+            updatePartnerStatus();
+            showPartnerConnectionNotification(sessions[0].user_name, 'already_connected');
+        }
+    } catch (error) {
+        console.error('Error checking existing partners:', error);
+    }
+}
+
+// Create partner status element
+function createPartnerStatusElement() {
+    partnerStatusElement = document.createElement('div');
+    partnerStatusElement.className = 'partner-status hidden';
+    partnerStatusElement.innerHTML = `
+        <div class="partner-status-content">
+            <span class="partner-icon">👤</span>
+            <span class="partner-text">Esperando a tu pareja...</span>
+        </div>
+    `;
+    
+    const mainContainer = document.querySelector('.main-container .container');
+    mainContainer.insertBefore(partnerStatusElement, wheelSelection);
+}
+
+// Update partner status display
+function updatePartnerStatus() {
+    if (!partnerStatusElement) return;
+    
+    if (connectedPartners.length > 0) {
+        partnerStatusElement.innerHTML = `
+            <div class="partner-status-content connected">
+                <span class="partner-icon">💕</span>
+                <span class="partner-text">Conectado con: ${connectedPartners.join(', ')}</span>
+                <span class="partner-indicator">🟢</span>
+            </div>
+        `;
+        partnerStatusElement.classList.remove('hidden');
+    } else {
+        partnerStatusElement.innerHTML = `
+            <div class="partner-status-content">
+                <span class="partner-icon">👤</span>
+                <span class="partner-text">Esperando a tu pareja...</span>
+                <span class="partner-indicator">🔴</span>
+            </div>
+        `;
+        partnerStatusElement.classList.remove('hidden');
+    }
+}
+
+// Show partner connection notification
+function showPartnerConnectionNotification(partnerName, type) {
+    let message = '';
+    let bgColor = '';
+    
+    switch(type) {
+        case 'joining':
+            message = `💕 Tu pareja ${partnerName} se está uniendo`;
+            bgColor = 'linear-gradient(45deg, #00d2d3, #0984e3)';
+            break;
+        case 'already_connected':
+            message = `💖 Tu pareja ${partnerName} ya está en la sala`;
+            bgColor = 'linear-gradient(45deg, #00b894, #00cec9)';
+            break;
+        case 'disconnected':
+            message = `💔 Tu pareja ${partnerName} se ha desconectado`;
+            bgColor = 'linear-gradient(45deg, #e17055, #fdcb6e)';
+            break;
+    }
+    
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed;
+        top: 80px;
+        right: 20px;
+        background: ${bgColor};
+        color: white;
+        padding: 20px 25px;
+        border-radius: 15px;
+        font-weight: 600;
+        z-index: 9999;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        animation: slideInFromRight 0.5s ease-out;
+        max-width: 300px;
+        text-align: center;
+    `;
+    notification.textContent = message;
+    
+    document.body.appendChild(notification);
+    
+    // Auto-remove after 4 seconds
+    setTimeout(() => {
+        notification.remove();
+    }, 4000);
+}
 // Handle realtime updates
 function handleRealtimeUpdate(payload) {
     const { eventType, new: newRecord, old: oldRecord } = payload;
@@ -251,7 +366,30 @@ function handleRealtimeUpdate(payload) {
         return;
     }
     
+    // Handle partner connection/disconnection
+    if (eventType === 'INSERT' && newRecord && newRecord.user_name !== currentUser) {
+        console.log(`👋 Nuevo partner conectado: ${newRecord.user_name}`);
+        if (!connectedPartners.includes(newRecord.user_name)) {
+            connectedPartners.push(newRecord.user_name);
+            updatePartnerStatus();
+            showPartnerConnectionNotification(newRecord.user_name, 'joining');
+        }
+    }
+    
+    if (eventType === 'DELETE' && oldRecord && oldRecord.user_name !== currentUser) {
+        console.log(`👋 Partner desconectado: ${oldRecord.user_name}`);
+        connectedPartners = connectedPartners.filter(name => name !== oldRecord.user_name);
+        updatePartnerStatus();
+        showPartnerConnectionNotification(oldRecord.user_name, 'disconnected');
+    }
+    
     if (eventType === 'UPDATE' && newRecord) {
+        // Update partners list if needed
+        if (newRecord.user_name !== currentUser && !connectedPartners.includes(newRecord.user_name)) {
+            connectedPartners.push(newRecord.user_name);
+            updatePartnerStatus();
+        }
+        
         // Partner started spinning
         if (newRecord.is_spinning && !oldRecord?.is_spinning) {
             console.log(`🎯 ${newRecord.user_name} comenzó a girar`);
@@ -526,14 +664,14 @@ function loadMysteryWheel() {
 // Load surprise wheel
 function loadSurpriseWheel() {
     const surpriseOptions = [
-        'Envía una foto tuya sonriendo 😊',
-        'Cuenta tu recuerdo favorito juntos 💕',
-        'Di 3 cosas que amas de tu pareja ❤️',
-        'Envía un audio cantando 🎵',
-        'Comparte una confesión linda 😍',
-        'Planea una cita virtual 🌹',
-        'Escribe un poema corto 📝',
-        'Haz un dibujo para tu pareja 🎨'
+        '😊📸',
+        '💕🎭', 
+        '❤️💌',
+        '🎵🎤',
+        '😍💭',
+        '🌹💻',
+        '📝✍️',
+        '🎨🖌️'
     ];
     currentOptions = surpriseOptions;
     updateOptionsDisplay();

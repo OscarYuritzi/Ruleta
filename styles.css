@@ -929,6 +929,49 @@ body {
     top: 0;
 }
 
+/* Partner Status */
+.partner-status {
+    background: rgba(0, 0, 0, 0.9);
+    backdrop-filter: blur(10px);
+    border-radius: 15px;
+    padding: 15px 25px;
+    margin-bottom: 30px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+    border: 2px solid rgba(227, 0, 112, 0.3);
+}
+
+.partner-status-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    color: #cccccc;
+    font-weight: 600;
+}
+
+.partner-status-content.connected {
+    color: #00b894;
+}
+
+.partner-icon {
+    font-size: 1.5rem;
+}
+
+.partner-text {
+    flex: 1;
+    text-align: center;
+}
+
+.partner-indicator {
+    font-size: 1rem;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
     .container {
