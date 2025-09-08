@@ -87,19 +87,19 @@ class RomanticRoulette {
         while (!this.userName) {
             const name = prompt('¡Bienvenido a las Ruletas del Amor! 💕\n\n¿Cómo te llamas? (Los demás usuarios podrán verte cuando gires una ruleta)');
             
-                            const { getUserSession } = await import('./src/supabase.js');
+            const { getUserSession } = await import('./src/supabase.js');
             if (name && name.trim().length > 0) {
                 this.userName = name.trim();
                 
                 // Crear sesión en Supabase
-                                this.initRealtimeConnection();
+                this.initRealtimeConnection();
                 try {
                     const { data, error } = await getUserSession(this.userName);
                     if (data && !error) {
                         this.currentSession = data;
                         this.showWelcomeMessage();
                     } else {
-                            alert('Error de conexión. Por favor conecta Supabase primero.');
+                        alert('Error de conexión. Por favor conecta Supabase primero.');
                         alert('Error conectando con el servidor. Intenta recargar la página.');
                     }
                 } catch (error) {
@@ -144,7 +144,8 @@ class RomanticRoulette {
         }
 
         try {
-            console.log('🔄 Iniciando conexión en tiempo real...');
+            // Limpiar sesiones viejas primero
+            await this.cleanupOldSessions();
             
             // Suscribirse a cambios en tiempo real
             this.realtimeChannel = supabaseModule.supabase
@@ -154,17 +155,14 @@ class RomanticRoulette {
                     schema: 'public',
                     table: 'realtime_sessions'
                 }, (payload) => {
-                    console.log('📡 Cambio detectado:', payload);
                     this.handleRealtimeUpdate(payload);
                 })
                 .subscribe();
-                
-            console.log('✅ Conexión en tiempo real establecida');
 
             // Cargar sesiones activas iniciales
             await this.loadActiveSessions();
             
-            // Actualizar cada 10 segundos para mantener sesión activa y mejor sincronización
+            // Actualizar cada 10 segundos para sincronización rápida
             setInterval(() => {
                 this.keepSessionAlive();
             }, 10000);
@@ -186,37 +184,47 @@ class RomanticRoulette {
             console.error('Error loading active sessions:', error);
         }
     }
+    async cleanupOldSessions() {
+        try {
+            const { supabase } = await import('./src/supabase.js');
+            if (!supabase) return;
+            
+            // Eliminar sesiones más viejas de 1 minuto
+            const oneMinuteAgo = new Date(Date.now() - 60 * 1000);
+            await supabase
+                .from('realtime_sessions')
+                .delete()
+                .lt('last_activity', oneMinuteAgo.toISOString());
+        } catch (error) {
+            console.error('Error cleaning up old sessions:', error);
+        }
+    }
 
     handleRealtimeUpdate(payload) {
         const { eventType, new: newRecord, old: oldRecord } = payload;
         
-        console.log(`🔄 Procesando evento ${eventType}:`, newRecord?.user_name, newRecord?.is_spinning);
-        
         switch (eventType) {
             case 'INSERT':
-                this.activeSessions.push(newRecord);
-                console.log(`➕ Usuario conectado: ${newRecord.user_name}`);
+                if (!this.activeSessions.find(s => s.id === newRecord.id)) {
+                    this.activeSessions.push(newRecord);
+                }
                 break;
             case 'UPDATE':
                 const index = this.activeSessions.findIndex(s => s.id === newRecord.id);
                 if (index > -1) {
                     this.activeSessions[index] = newRecord;
                     
-                    // Sincronizar con otros usuarios (no conmigo mismo)
+                    // Sincronizar con otros usuarios inmediatamente
                     if (newRecord.id !== this.currentSession?.id) {
-                        console.log(`🎯 Sincronizando con ${newRecord.user_name}:`, newRecord.is_spinning);
                         this.syncRemoteWheelState(newRecord);
-                        
-                        // Mostrar resultado si está disponible
-                        if (!newRecord.is_spinning && newRecord.last_result && !this.lastShownResult) {
-                            this.showRemoteResult(newRecord);
-                        }
                     }
+                } else {
+                    // Si no existe, agregarlo
+                    this.activeSessions.push(newRecord);
                 }
                 break;
             case 'DELETE':
                 this.activeSessions = this.activeSessions.filter(s => s.id !== oldRecord.id);
-                console.log(`➖ Usuario desconectado: ${oldRecord.user_name}`);
                 break;
         }
         
@@ -224,136 +232,105 @@ class RomanticRoulette {
     }
 
     syncRemoteWheelState(remoteSession) {
-        console.log(`🔄 Intentando sincronizar con ${remoteSession.user_name}...`);
+        // Solo sincronizar si estamos en la pantalla de la ruleta
+        const wheelCanvas = document.getElementById('wheel-canvas');
+        if (!wheelCanvas || this.isSpinning) return;
         
-        // Si alguien más está girando, sincronizar automáticamente
+        // Si alguien más está girando, sincronizar completamente
         if (remoteSession.is_spinning && remoteSession.wheel_type && remoteSession.current_options?.length > 0) {
+            const wasOnSameType = this.wheelType === remoteSession.wheel_type;
             
-            // Cambiar a su tipo de ruleta si es diferente
-            if (this.wheelType !== remoteSession.wheel_type) {
-                console.log(`🎯 Cambiando a ruleta tipo: ${remoteSession.wheel_type}`);
+            if (!wasOnSameType) {
+                // Cambiar al tipo de ruleta que está girando
                 this.selectWheelType(remoteSession.wheel_type);
             }
             
-            // Asegurar que estamos en la pantalla correcta
-            if (document.getElementById('wheel-selection') && !document.getElementById('wheel-selection').classList.contains('hidden')) {
-                document.getElementById('wheel-selection').classList.add('hidden');
-                document.getElementById('wheel-creator').classList.remove('hidden');
-                this.initCanvas();
-            }
-            
             // Sincronizar opciones y rotación
-            if (!this.isSpinning) {
-                console.log(`🎡 Sincronizando ruleta de ${remoteSession.user_name}...`);
-                
-                // Sync their wheel type and options
-                this.options = [...remoteSession.current_options];
-                this.updateDisplay();
-                
-                // Mostrar indicador de que alguien está girando
-                this.showSpinningIndicator(remoteSession.user_name);
-                
-                // Animate rotation to match theirs
-                this.animateToRotation(remoteSession.wheel_rotation);
-            }
+            this.options = [...remoteSession.current_options];
+            this.updateDisplay();
+            
+            // Animar rotación con más fluidez
+            this.animateToRotation(remoteSession.wheel_rotation);
+            
+            // Mostrar indicador visual
+            this.showRemoteSpinIndicator(remoteSession.user_name);
+        }
+        
+        // Mostrar resultado cuando termine de girar
+        if (!remoteSession.is_spinning && remoteSession.last_result && this.lastSyncedResult !== remoteSession.last_result) {
+            this.lastSyncedResult = remoteSession.last_result;
+            this.showRemoteResult(remoteSession.user_name, remoteSession.last_result);
         }
     }
     
-    showSpinningIndicator(userName) {
-        // Mostrar indicador de que alguien está girando
-        const indicator = document.createElement('div');
-        indicator.id = 'spinning-indicator';
-        indicator.style.cssText = `
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0, 0, 0, 0.9);
-            color: white;
-            padding: 20px 30px;
-            border-radius: 15px;
-            font-size: 1.2rem;
-            font-weight: 600;
-            z-index: 1002;
-            border: 2px solid #e30070;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-            animation: pulse 1s ease-in-out infinite;
-        `;
-        indicator.innerHTML = `🎯 ${userName} está girando...<br><small>¡Espera el resultado! 💫</small>`;
+    showRemoteSpinIndicator(userName) {
+        // Crear indicador visual de que alguien más está girando
+        let indicator = document.getElementById('remote-spin-indicator');
+        if (!indicator) {
+            indicator = document.createElement('div');
+            indicator.id = 'remote-spin-indicator';
+            indicator.style.cssText = `
+                position: absolute;
+                top: 10px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: rgba(227, 0, 112, 0.9);
+                color: white;
+                padding: 8px 15px;
+                border-radius: 20px;
+                font-weight: 600;
+                z-index: 100;
+                animation: pulse 1s ease-in-out infinite;
+            `;
+            document.querySelector('.wheel-container').appendChild(indicator);
+        }
         
-        // Remover indicador anterior si existe
-        const existing = document.getElementById('spinning-indicator');
-        if (existing) existing.remove();
+        indicator.textContent = `🎯 ${userName} está girando...`;
         
-        document.body.appendChild(indicator);
-        
-        // Remover después de 5 segundos
-        setTimeout(() => {
-            if (document.getElementById('spinning-indicator')) {
-                document.getElementById('spinning-indicator').remove();
-            }
-        }, 5000);
+        // Remover después de 8 segundos
+        clearTimeout(this.indicatorTimeout);
+        this.indicatorTimeout = setTimeout(() => {
+            if (indicator) indicator.remove();
+        }, 8000);
     }
     
-    showRemoteResult(session) {
-        if (this.lastShownResult === session.last_result) return; // No mostrar el mismo resultado dos veces
-        
-        console.log(`🎉 Mostrando resultado de ${session.user_name}: ${session.last_result}`);
-        this.lastShownResult = session.last_result;
-        
-        // Remover indicador de girando
-        const indicator = document.getElementById('spinning-indicator');
-        if (indicator) indicator.remove();
-        
-        // Crear notificación de resultado
+    showRemoteResult(userName, result) {
+        // Crear notificación de resultado remoto
         const notification = document.createElement('div');
         notification.style.cssText = `
             position: fixed;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background: linear-gradient(145deg, rgba(0, 0, 0, 0.95), rgba(20, 20, 20, 0.9));
-            backdrop-filter: blur(20px);
+            background: rgba(0, 0, 0, 0.95);
             color: white;
-            padding: 40px 50px;
-            border-radius: 20px;
-            text-align: center;
-            z-index: 1003;
+            padding: 20px 30px;
+            border-radius: 15px;
             border: 2px solid #e30070;
-            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.5);
-            max-width: 90vw;
-            animation: slideIn 0.5s ease-out;
+            z-index: 1001;
+            text-align: center;
+            max-width: 300px;
+            animation: fadeInScale 0.5s ease-out;
         `;
         
         notification.innerHTML = `
-            <div style="font-size: 3rem; margin-bottom: 15px;">🎉</div>
-            <div style="font-size: 1.3rem; font-weight: 600; color: #e30070; margin-bottom: 10px;">
-                Resultado de ${session.user_name}:
+            <div style="font-weight: 600; color: #e30070; margin-bottom: 10px;">
+                🎉 Resultado de ${userName}:
             </div>
-            <div style="font-size: 1.8rem; font-weight: 700; margin-bottom: 20px; color: white;">
-                ${session.last_result}
+            <div style="font-size: 1.1rem; margin-bottom: 10px;">
+                ${result}
             </div>
-            <div style="font-size: 1.5rem;">✨💕🌟</div>
-            <button onclick="this.parentElement.remove()" style="
-                margin-top: 20px;
-                background: #e30070;
-                color: white;
-                border: none;
-                padding: 10px 20px;
-                border-radius: 25px;
-                cursor: pointer;
-                font-weight: 600;
-            ">Cerrar</button>
+            <div style="font-size: 0.8rem; opacity: 0.7;">
+                ✨ Resultado sincronizado ✨
+            </div>
         `;
         
         document.body.appendChild(notification);
         
-        // Remover después de 10 segundos
+        // Remover después de 4 segundos
         setTimeout(() => {
-            if (notification.parentElement) {
-                notification.remove();
-            }
-        }, 10000);
+            notification.remove();
+        }, 4000);
     }
 
     animateToRotation(targetRotation) {
@@ -362,14 +339,14 @@ class RomanticRoulette {
         const startRotation = this.rotation;
         const rotationDiff = targetRotation - startRotation;
         const startTime = Date.now();
-        const duration = 800; // Smooth 0.8 second sync
+        const duration = 500; // Más rápido: 0.5 segundos
         
         const animate = () => {
             const elapsed = Date.now() - startTime;
             const progress = Math.min(elapsed / duration, 1);
             
-            // Smooth easing
-            const easeOut = 1 - Math.pow(1 - progress, 3);
+            // Suavizado más natural
+            const easeOut = 1 - Math.pow(1 - progress, 2);
             
             this.rotation = startRotation + (rotationDiff * easeOut);
             this.drawWheel();
@@ -405,28 +382,16 @@ class RomanticRoulette {
                 transition: all 0.3s ease;
                 opacity: 0.8;
             `;
-            
-            // Hover effect for better visibility when needed
-            activeUsersPanel.addEventListener('mouseenter', () => {
-                activeUsersPanel.style.opacity = '1';
-                activeUsersPanel.style.transform = 'scale(1.05)';
-            });
-            
-            activeUsersPanel.addEventListener('mouseleave', () => {
-                activeUsersPanel.style.opacity = '0.8';
-                activeUsersPanel.style.transform = 'scale(1)';
-            });
-            
             document.body.appendChild(activeUsersPanel);
         }
 
-        // Filtrar sesiones activas (último minuto para mayor precisión)
+        // Filtrar sesiones activas (últimos 5 minutos)
         const now = new Date();
-        const oneMinuteAgo = new Date(now.getTime() - 1 * 60 * 1000);
+        const fiveMinutesAgo = new Date(now.getTime() - 5 * 60 * 1000);
         
         const recentSessions = this.activeSessions.filter(session => {
             const lastActivity = new Date(session.last_activity);
-            return lastActivity > oneMinuteAgo;
+            return lastActivity > fiveMinutesAgo;
         });
 
         if (recentSessions.length === 0) {
@@ -706,7 +671,7 @@ class RomanticRoulette {
             const item = document.createElement('div');
             item.className = 'option-item fade-in';
             
-            const optionText = this.wheelType === 'mystery' ? `Opción ${index + 1} 🎁` : option;
+            const optionText = this.wheelType === 'mystery' ? \`Opción ${index + 1} 🎁` : option;
             
             item.innerHTML = `
                 <span class="option-text">${optionText}</span>
@@ -720,7 +685,7 @@ class RomanticRoulette {
         const spinBtn = document.getElementById('spin-btn');
         spinBtn.disabled = this.options.length < 2;
         if (this.options.length >= 2) {
-            spinBtn.textContent = `🎯 Girar ruleta`;
+            spinBtn.textContent = \`🎯 Girar ruleta`;
         } else {
             spinBtn.textContent = 'Agrega más opciones ✨';
         }
@@ -776,7 +741,7 @@ class RomanticRoulette {
             // Responsive text size based on segments and screen size
             let baseFontSize = size > 600 ? 20 : size > 400 ? 16 : 14;
             const fontSize = segments > 12 ? baseFontSize - 4 : segments > 8 ? baseFontSize - 2 : baseFontSize;
-            this.ctx.font = `bold ${fontSize}px 'Poppins', Arial, sans-serif`;
+            this.ctx.font = \`bold ${fontSize}px 'Poppins', Arial, sans-serif`;
             
             // Text position - well within segment
             const textRadius = radius * 0.7;
@@ -798,42 +763,42 @@ class RomanticRoulette {
             
             // Para la ruleta sorpresa, solo mostrar el emoji grande
             if (this.wheelType === 'surprise') {
-                this.ctx.font = `${fontSize + Math.floor(size * 0.02)}px Arial`; // Emojis responsive
+                this.ctx.font = \`${fontSize + Math.floor(size * 0.02)}px Arial`; // Emojis responsive
                 this.ctx.fillText(displayText, textRadius, 0);
             } else {
-            // Handle text length
-            const maxLength = segments > 10 ? 15 : segments > 6 ? 20 : 30;
-            
-            if (displayText.length <= maxLength) {
-                // Contorno blanco para legibilidad
-                this.ctx.strokeText(displayText, textRadius, 0);
-                this.ctx.fillText(displayText, textRadius, 0);
-            } else {
-                // Split text into two lines
-                const mid = Math.ceil(displayText.length / 2);
-                const spaceIndex = displayText.indexOf(' ', mid - 5);
+                // Handle text length
+                const maxLength = segments > 10 ? 15 : segments > 6 ? 20 : 30;
                 
-                let line1, line2;
-                if (spaceIndex > -1 && spaceIndex < mid + 5) {
-                    line1 = displayText.substring(0, spaceIndex);
-                    line2 = displayText.substring(spaceIndex + 1);
+                if (displayText.length <= maxLength) {
+                    // Contorno blanco para legibilidad
+                    this.ctx.strokeText(displayText, textRadius, 0);
+                    this.ctx.fillText(displayText, textRadius, 0);
                 } else {
-                    line1 = displayText.substring(0, mid);
-                    line2 = displayText.substring(mid);
+                    // Split text into two lines
+                    const mid = Math.ceil(displayText.length / 2);
+                    const spaceIndex = displayText.indexOf(' ', mid - 5);
+                    
+                    let line1, line2;
+                    if (spaceIndex > -1 && spaceIndex < mid + 5) {
+                        line1 = displayText.substring(0, spaceIndex);
+                        line2 = displayText.substring(spaceIndex + 1);
+                    } else {
+                        line1 = displayText.substring(0, mid);
+                        line2 = displayText.substring(mid);
+                    }
+                    
+                    if (line1.length > maxLength / 2 + 2) {
+                        line1 = line1.substring(0, maxLength / 2) + '…';
+                    }
+                    if (line2.length > maxLength / 2 + 2) {
+                        line2 = line2.substring(0, maxLength / 2) + '…';
+                    }
+                    
+                    this.ctx.strokeText(line1, textRadius, -fontSize * 0.5);
+                    this.ctx.fillText(line1, textRadius, -fontSize * 0.5);
+                    this.ctx.strokeText(line2, textRadius, fontSize * 0.5);
+                    this.ctx.fillText(line2, textRadius, fontSize * 0.5);
                 }
-                
-                if (line1.length > maxLength / 2 + 2) {
-                    line1 = line1.substring(0, maxLength / 2) + '…';
-                }
-                if (line2.length > maxLength / 2 + 2) {
-                    line2 = line2.substring(0, maxLength / 2) + '…';
-                }
-                
-                this.ctx.strokeText(line1, textRadius, -fontSize * 0.5);
-                this.ctx.fillText(line1, textRadius, -fontSize * 0.5);
-                this.ctx.strokeText(line2, textRadius, fontSize * 0.5);
-                this.ctx.fillText(line2, textRadius, fontSize * 0.5);
-            }
             }
             
             this.ctx.restore();
@@ -855,7 +820,7 @@ class RomanticRoulette {
         // Center heart with glow effect
         this.ctx.textAlign = 'center';
         this.ctx.textBaseline = 'middle';
-        this.ctx.font = `bold ${Math.floor(size * 0.045)}px Arial`; // Responsive heart size
+        this.ctx.font = \`bold ${Math.floor(size * 0.045)}px Arial`; // Responsive heart size
         this.ctx.fillStyle = '#e30070';
         this.ctx.strokeStyle = '#e30070';
         this.ctx.fillText('💕', centerX, centerY);
@@ -869,6 +834,7 @@ class RomanticRoulette {
         const centerY = size / 2;
         const radius = (size * 0.44);
         
+        this.ctx.clearRect(0, 0, size, size);
         
         // Draw empty circle
         this.ctx.beginPath();
@@ -881,7 +847,7 @@ class RomanticRoulette {
         
         // Draw message
         this.ctx.fillStyle = '#ffffff';
-        this.ctx.font = `bold ${Math.floor(size * 0.033)}px "Poppins", Arial, sans-serif`; // Responsive text
+        this.ctx.font = \`bold ${Math.floor(size * 0.033)}px "Poppins", Arial, sans-serif`; // Responsive text
         this.ctx.textAlign = 'center';
         this.ctx.textBaseline = 'middle';
         this.ctx.fillText('Agrega opciones', centerX, centerY - 10);
@@ -896,7 +862,7 @@ class RomanticRoulette {
         this.ctx.strokeStyle = '#e30070';
         this.ctx.lineWidth = 4;
         this.ctx.stroke();
-        this.ctx.font = `${Math.floor(size * 0.045)}px Arial`; // Responsive heart
+        this.ctx.font = \`${Math.floor(size * 0.045)}px Arial`; // Responsive heart
         this.ctx.fillStyle = '#e30070';
         this.ctx.strokeStyle = '#e30070';
         this.ctx.fillText('💕', centerX, centerY);
@@ -973,13 +939,19 @@ class RomanticRoulette {
         if (this.currentSession) {
             try {
                 const { updateSpinningState } = await import('./src/supabase.js');
-                await updateSpinningState(
+                const { data, error } = await updateSpinningState(
                     this.currentSession.id,
                     true,
                     this.rotation,
                     this.wheelType,
                     this.options
                 );
+                
+                if (error) {
+                    console.error('Error notifying spin start:', error);
+                } else {
+                    console.log('Spin start notified successfully');
+                }
             } catch (error) {
                 console.error('Error notifying spin start:', error);
             }
@@ -994,12 +966,10 @@ class RomanticRoulette {
         const resultIndex = Math.floor(normalizedRotation / segmentAngle) % segments;
         const result = this.options[resultIndex];
         
-        console.log(`🎯 Notificando fin de giro. Resultado: ${result}`);
-        
         if (this.currentSession) {
             try {
                 const { updateSpinningState } = await import('./src/supabase.js');
-                await updateSpinningState(
+                const { data, error } = await updateSpinningState(
                     this.currentSession.id,
                     false,
                     this.rotation,
@@ -1007,7 +977,12 @@ class RomanticRoulette {
                     this.options,
                     result
                 );
-                console.log('✅ Estado de fin de giro enviado correctamente');
+                
+                if (error) {
+                    console.error('Error notifying spin end:', error);
+                } else {
+                    console.log('Spin end notified with result:', result);
+                }
             } catch (error) {
                 console.error('Error notifying spin end:', error);
             }
