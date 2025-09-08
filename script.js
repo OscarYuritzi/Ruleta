@@ -248,11 +248,8 @@ class RomanticRoulette {
         const segments = this.options.length;
         const anglePerSegment = (2 * Math.PI) / segments;
         
-        // Colors: predominantly white with fuchsia and black accents
-        const colors = [
-            '#ffffff', '#ff1493', '#ffb6c1', '#ff69b4', 
-            '#ffe4e1', '#ffc0cb', '#fff0f5', '#e30052'
-        ];
+        // Colores más suaves y legibles
+        const colors = ['#ffffff', '#ffe4e6', '#ffccd5', '#ffeef0'];
         
         this.ctx.clearRect(0, 0, 600, 600);
         this.ctx.save();
@@ -265,27 +262,18 @@ class RomanticRoulette {
             const endAngle = (i + 1) * anglePerSegment;
             const color = colors[i % colors.length];
             
-            // Create gradient for each segment
-            const gradient = this.ctx.createRadialGradient(0, 0, 50, 0, 0, radius);
-            gradient.addColorStop(0, '#ffffff');
-            gradient.addColorStop(0.7, color);
-            gradient.addColorStop(1, this.darkenColor(color, 0.2));
-            
             // Draw segment
             this.ctx.beginPath();
             this.ctx.arc(0, 0, radius, startAngle, endAngle);
             this.ctx.lineTo(0, 0);
             
-            this.ctx.fillStyle = gradient;
+            this.ctx.fillStyle = color;
             this.ctx.fill();
             
-            // Beautiful border with romantic colors
+            // Borde más sutil
             this.ctx.strokeStyle = '#e30052';
-            this.ctx.lineWidth = 3;
-            this.ctx.shadowColor = 'rgba(227, 0, 82, 0.3)';
-            this.ctx.shadowBlur = 5;
+            this.ctx.lineWidth = 2;
             this.ctx.stroke();
-            this.ctx.shadowBlur = 0;
 
             // Draw text
             this.ctx.save();
@@ -294,16 +282,16 @@ class RomanticRoulette {
             this.ctx.textBaseline = 'middle';
             
             // Text size based on segments
-            const fontSize = segments > 12 ? 11 : segments > 8 ? 13 : 15;
+            const fontSize = segments > 12 ? 12 : segments > 8 ? 14 : 16;
             this.ctx.font = `bold ${fontSize}px 'Poppins', Arial, sans-serif`;
             
             // Text position - well within segment
-            const textRadius = radius * 0.7;
+            const textRadius = radius * 0.65;
             
-            // Better text colors for readability
-            this.ctx.fillStyle = '#2c3e50';
+            // Texto con alto contraste
+            this.ctx.fillStyle = '#1a1a1a';
             this.ctx.strokeStyle = '#ffffff';
-            this.ctx.lineWidth = 1;
+            this.ctx.lineWidth = 3;
 
             let displayText;
             if (this.wheelType === 'mystery') {
@@ -313,17 +301,12 @@ class RomanticRoulette {
             }
             
             // Handle text length
-            const maxLength = segments > 10 ? 12 : segments > 6 ? 18 : 25;
+            const maxLength = segments > 10 ? 15 : segments > 6 ? 20 : 30;
             
             if (displayText.length <= maxLength) {
-                // Add text shadow for better readability
-                this.ctx.shadowColor = 'rgba(255, 255, 255, 0.8)';
-                this.ctx.shadowOffsetX = 1;
-                this.ctx.shadowOffsetY = 1;
-                this.ctx.shadowBlur = 2;
+                // Contorno blanco para legibilidad
                 this.ctx.strokeText(displayText, textRadius, 0);
                 this.ctx.fillText(displayText, textRadius, 0);
-                this.ctx.shadowBlur = 0;
             } else {
                 // Split text into two lines
                 const mid = Math.ceil(displayText.length / 2);
@@ -345,15 +328,10 @@ class RomanticRoulette {
                     line2 = line2.substring(0, maxLength / 2) + '…';
                 }
                 
-                this.ctx.shadowColor = 'rgba(255, 255, 255, 0.8)';
-                this.ctx.shadowOffsetX = 1;
-                this.ctx.shadowOffsetY = 1;
-                this.ctx.shadowBlur = 2;
                 this.ctx.strokeText(line1, textRadius, -fontSize * 0.5);
                 this.ctx.fillText(line1, textRadius, -fontSize * 0.5);
                 this.ctx.strokeText(line2, textRadius, fontSize * 0.5);
                 this.ctx.fillText(line2, textRadius, fontSize * 0.5);
-                this.ctx.shadowBlur = 0;
             }
             
             this.ctx.restore();
@@ -362,51 +340,22 @@ class RomanticRoulette {
         this.ctx.restore();
 
         // Draw beautiful center circle with gradient
-        const centerGradient = this.ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, 45);
-        centerGradient.addColorStop(0, '#ffffff');
-        centerGradient.addColorStop(0.7, '#ffb6c1');
-        centerGradient.addColorStop(1, '#e30052');
-        
         this.ctx.beginPath();
         this.ctx.arc(centerX, centerY, 45, 0, 2 * Math.PI);
-        this.ctx.fillStyle = centerGradient;
+        this.ctx.fillStyle = '#ffffff';
         this.ctx.fill();
         
         this.ctx.strokeStyle = '#e30052';
-        this.ctx.lineWidth = 5;
-        this.ctx.shadowColor = 'rgba(227, 0, 82, 0.5)';
-        this.ctx.shadowBlur = 10;
+        this.ctx.lineWidth = 4;
         this.ctx.stroke();
-        this.ctx.shadowBlur = 0;
         
         // Center heart with glow effect
         this.ctx.textAlign = 'center';
         this.ctx.textBaseline = 'middle';
-        this.ctx.font = 'bold 32px Arial';
-        this.ctx.fillStyle = '#ffffff';
+        this.ctx.font = 'bold 28px Arial';
+        this.ctx.fillStyle = '#e30052';
         this.ctx.strokeStyle = '#e30052';
-        this.ctx.lineWidth = 2;
-        this.ctx.shadowColor = 'rgba(255, 255, 255, 0.8)';
-        this.ctx.shadowBlur = 8;
-        this.ctx.strokeText('💕', centerX, centerY);
         this.ctx.fillText('💕', centerX, centerY);
-        this.ctx.shadowBlur = 0;
-    }
-    
-    // Helper function to darken colors
-    darkenColor(color, factor) {
-        if (color === '#ffffff') return '#f0f0f0';
-        // Simple darkening for other colors
-        const colors = {
-            '#ff1493': '#cc1075',
-            '#ffb6c1': '#cc919a',
-            '#ff69b4': '#cc5490',
-            '#ffe4e1': '#ccb5b3',
-            '#ffc0cb': '#cc9aa2',
-            '#fff0f5': '#ccc0c4',
-            '#e30052': '#b50042'
-        };
-        return colors[color] || color;
     }
 
     drawEmptyWheel() {
@@ -418,64 +367,35 @@ class RomanticRoulette {
         
         this.ctx.clearRect(0, 0, 600, 600);
         
-        // Draw beautiful empty circle with romantic gradient
-        const gradient = this.ctx.createRadialGradient(centerX, centerY, 50, centerX, centerY, radius);
-        gradient.addColorStop(0, '#ffffff');
-        gradient.addColorStop(0.7, '#ffb6c1');
-        gradient.addColorStop(1, '#e30052');
-        
+        // Draw empty circle
         this.ctx.beginPath();
         this.ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
-        this.ctx.fillStyle = gradient;
+        this.ctx.fillStyle = '#ffffff';
         this.ctx.fill();
-        
         this.ctx.strokeStyle = '#e30052';
-        this.ctx.lineWidth = 5;
-        this.ctx.shadowColor = 'rgba(227, 0, 82, 0.3)';
-        this.ctx.shadowBlur = 10;
+        this.ctx.lineWidth = 4;
         this.ctx.stroke();
-        this.ctx.shadowBlur = 0;
         
         // Draw message
-        this.ctx.fillStyle = '#2c3e50';
-        this.ctx.font = 'bold 22px "Poppins", Arial, sans-serif';
+        this.ctx.fillStyle = '#1a1a1a';
+        this.ctx.font = 'bold 20px "Poppins", Arial, sans-serif';
         this.ctx.textAlign = 'center';
         this.ctx.textBaseline = 'middle';
-        this.ctx.shadowColor = 'rgba(255, 255, 255, 0.8)';
-        this.ctx.shadowOffsetX = 1;
-        this.ctx.shadowOffsetY = 1;
-        this.ctx.shadowBlur = 3;
         this.ctx.fillText('Agrega opciones', centerX, centerY - 10);
         this.ctx.fillText('románticas 💕', centerX, centerY + 15);
-        this.ctx.shadowBlur = 0;
         
-        // Draw beautiful center
-        const centerGradient = this.ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, 45);
-        centerGradient.addColorStop(0, '#ffffff');
-        centerGradient.addColorStop(0.7, '#ffb6c1');
-        centerGradient.addColorStop(1, '#e30052');
-        
+        // Draw center
         this.ctx.beginPath();
         this.ctx.arc(centerX, centerY, 45, 0, 2 * Math.PI);
-        this.ctx.fillStyle = centerGradient;
-        this.ctx.fill();
-        
-        this.ctx.strokeStyle = '#e30052';
-        this.ctx.lineWidth = 5;
-        this.ctx.shadowColor = 'rgba(227, 0, 82, 0.5)';
-        this.ctx.shadowBlur = 8;
-        this.ctx.stroke();
-        this.ctx.shadowBlur = 0;
-        
         this.ctx.fillStyle = '#ffffff';
+        this.ctx.fill();
         this.ctx.strokeStyle = '#e30052';
-        this.ctx.lineWidth = 2;
-        this.ctx.font = 'bold 32px Arial';
-        this.ctx.shadowColor = 'rgba(255, 255, 255, 0.8)';
-        this.ctx.shadowBlur = 6;
-        this.ctx.strokeText('💕', centerX, centerY);
+        this.ctx.lineWidth = 4;
+        this.ctx.stroke();
+        this.ctx.font = '28px Arial';
+        this.ctx.fillStyle = '#e30052';
+        this.ctx.strokeStyle = '#e30052';
         this.ctx.fillText('💕', centerX, centerY);
-        this.ctx.shadowBlur = 0;
     }
 
     spinWheel() {

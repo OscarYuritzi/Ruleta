@@ -237,9 +237,8 @@ body {
 
 .input-group {
     display: flex;
-    gap: 10px;
+    gap: 15px;
     margin-bottom: 25px;
-    flex-wrap: wrap;
 }
 
 #option-input {
@@ -438,7 +437,64 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 20px;
+    gap: 15px;
+}
+
+.spin-button-container {
+    margin-top: 30px;
+    display: flex;
+    justify-content: center;
+}
+
+.spin-button {
+    background: linear-gradient(145deg, #e30052, #ff1493);
+    color: white;
+    border: none;
+    padding: 20px 40px;
+    border-radius: 30px;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 1.2rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 6px 20px rgba(227, 0, 82, 0.4);
+    position: relative;
+    overflow: hidden;
+    animation: buttonPulse 3s ease-in-out infinite;
+    min-width: 200px;
+}
+
+.spin-button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+    transition: left 0.6s;
+}
+
+.spin-button:hover {
+    transform: translateY(-4px) scale(1.05);
+    box-shadow: 0 12px 35px rgba(227, 0, 82, 0.6);
+    background: linear-gradient(145deg, #ff1493, #ff69b4);
+    animation: none;
+}
+
+.spin-button:hover::before {
+    left: 100%;
+}
+
+.spin-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+    animation: none;
+}
+
+.spin-button:disabled:hover {
+    transform: none;
+    box-shadow: 0 6px 20px rgba(227, 0, 82, 0.4);
 }
 
 .wheel-pointer {
@@ -513,33 +569,16 @@ body {
 #wheel-canvas {
     border-radius: 50%;
     box-shadow: 
-        0 20px 60px rgba(0, 0, 0, 0.4),
-        0 0 40px rgba(227, 0, 82, 0.4),
-        inset 0 0 30px rgba(255, 255, 255, 0.3);
-    border: 8px solid #ffffff;
-    outline: 4px solid #e30052;
-    outline-offset: 2px;
+        0 15px 50px rgba(0, 0, 0, 0.3),
+        0 0 30px rgba(227, 0, 82, 0.3);
+    border: 6px solid #ffffff;
+    outline: 3px solid #e30052;
+    outline-offset: 1px;
     transition: transform 0.1s ease;
     width: 600px;
     height: 600px;
     display: block;
     position: relative;
-    animation: wheelGlow 4s ease-in-out infinite alternate;
-}
-
-@keyframes wheelGlow {
-    0% { 
-        box-shadow: 
-            0 20px 60px rgba(0, 0, 0, 0.4),
-            0 0 40px rgba(227, 0, 82, 0.4),
-            inset 0 0 30px rgba(255, 255, 255, 0.3);
-    }
-    100% { 
-        box-shadow: 
-            0 25px 70px rgba(0, 0, 0, 0.5),
-            0 0 50px rgba(227, 0, 82, 0.6),
-            inset 0 0 40px rgba(255, 255, 255, 0.4);
-    }
 }
 
 /* Saved Wheels */
@@ -800,6 +839,12 @@ body {
         font-size: 2.5rem;
     }
     
+    .spin-button {
+        padding: 18px 35px;
+        font-size: 1.1rem;
+        min-width: 180px;
+    }
+    
     .saved-wheels {
         padding: 30px 20px;
     }
@@ -855,6 +900,12 @@ body {
     
     .wheel-pointer {
         font-size: 2rem;
+    }
+    
+    .spin-button {
+        padding: 16px 30px;
+        font-size: 1rem;
+        min-width: 160px;
     }
 }
 
