@@ -68,6 +68,16 @@ class RomanticRoulette {
         this.setupEventListeners();
         this.loadSavedWheels();
         this.startParticleSystem();
+        
+        // Agregar event listener para resize
+        window.addEventListener('resize', () => {
+            if (this.canvas && this.ctx) {
+                setTimeout(() => {
+                    this.initCanvas();
+                    this.drawWheel();
+                }, 100);
+            }
+        });
     }
 
     setupEventListeners() {
@@ -172,34 +182,42 @@ class RomanticRoulette {
         this.canvas = document.getElementById('wheel-canvas');
         this.ctx = this.canvas.getContext('2d');
         
-        // Cálculo automático basado en viewport disponible
+        // Cálculo seguro y responsivo
         const viewportWidth = window.innerWidth;
         const viewportHeight = window.innerHeight;
+        
+        // Obtener dimensiones reales del contenedor
         const container = this.canvas.parentElement;
+        const containerRect = container.getBoundingClientRect();
         
-        // Calcular espacio disponible real
-        const headerHeight = document.querySelector('.header').offsetHeight || 100;
-        const availableHeight = viewportHeight - headerHeight - 200; // 200px para botones y espaciado
-        const availableWidth = container.offsetWidth - 40; // 40px total de padding
+        // Calcular espacios ocupados
+        const headerHeight = document.querySelector('.header')?.offsetHeight || 120;
+        const spinButtonHeight = 80; // Botón de girar + margin
+        const pointerHeight = 80; // Flecha + margin
+        const extraSpacing = 60; // Espaciado adicional de seguridad
         
-        // El tamaño será el menor entre ancho y alto disponible para mantener cuadrado
-        const maxSize = Math.min(availableWidth, availableHeight);
+        // Espacio disponible real
+        const availableHeight = viewportHeight - headerHeight - spinButtonHeight - pointerHeight - extraSpacing;
+        const availableWidth = Math.min(containerRect.width, viewportWidth) - 40; // Padding lateral
         
-        // Aplicar límites seguros por dispositivo
+        // Usar el menor para mantener proporción cuadrada
+        const maxSafeSize = Math.min(availableWidth, availableHeight);
+        
+        // Límites responsivos más conservadores
         let finalSize;
-        if (viewportWidth > 1024) {
-            // Desktop: máximo 80% del viewport pero no más de 1000px
-            finalSize = Math.min(maxSize, Math.min(viewportWidth * 0.8, 1000));
-        } else if (viewportWidth > 768) {
-            // Tablet: máximo 85% del viewport
-            finalSize = Math.min(maxSize, viewportWidth * 0.85);
+        if (viewportWidth >= 1024) {
+            // Desktop: máximo 70% del espacio disponible
+            finalSize = Math.min(maxSafeSize * 0.7, 600);
+        } else if (viewportWidth >= 768) {
+            // Tablet: máximo 75% del espacio disponible  
+            finalSize = Math.min(maxSafeSize * 0.75, 500);
         } else {
-            // Móvil: máximo 90% del viewport
-            finalSize = Math.min(maxSize, viewportWidth * 0.9);
+            // Móvil: máximo 80% del espacio disponible
+            finalSize = Math.min(maxSafeSize * 0.8, 380);
         }
         
-        // Asegurar tamaño mínimo
-        finalSize = Math.max(finalSize, 300);
+        // Asegurar que no sea menor que 250px pero tampoco mayor que el viewport
+        finalSize = Math.max(250, Math.min(finalSize, maxSafeSize));
         
         // Set actual canvas size for crisp rendering
         const scale = window.devicePixelRatio || 1;
