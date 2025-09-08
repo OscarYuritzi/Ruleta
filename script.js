@@ -306,26 +306,29 @@ class RomanticRoulette {
                 this.ctx.save();
                 this.ctx.rotate(startAngle + anglePerSegment / 2);
                 this.ctx.textAlign = 'center';
+                this.ctx.textBaseline = 'middle';
                 
                 // Beautiful text styling
-                const fontSize = Math.max(14, Math.min(20, radius * 0.06));
-                this.ctx.font = `bold ${fontSize}px 'Dancing Script', cursive`;
+                const fontSize = Math.max(16, Math.min(24, radius * 0.08));
+                this.ctx.font = `bold ${fontSize}px 'Poppins', sans-serif`;
+                
+                // White text with dark outline for maximum contrast
                 this.ctx.fillStyle = '#FFFFFF';
-                this.ctx.strokeStyle = '#4A0E4E';
-                this.ctx.lineWidth = 3;
-                this.ctx.shadowColor = 'rgba(0,0,0,0.8)';
-                this.ctx.shadowBlur = 4;
-                this.ctx.shadowOffsetX = 2;
-                this.ctx.shadowOffsetY = 2;
+                this.ctx.strokeStyle = '#000000';
+                this.ctx.lineWidth = 4;
+                this.ctx.shadowColor = 'rgba(0,0,0,1)';
+                this.ctx.shadowBlur = 6;
+                this.ctx.shadowOffsetX = 3;
+                this.ctx.shadowOffsetY = 3;
 
                 // Smart text display
                 const text = this.options[i];
-                const maxLength = radius > 200 ? 35 : radius > 150 ? 28 : 20;
+                const maxLength = radius > 200 ? 40 : radius > 150 ? 30 : 22;
                 
                 if (text.length <= maxLength) {
                     // Single line
-                    this.ctx.strokeText(text, radius * 0.65, 0);
-                    this.ctx.fillText(text, radius * 0.65, 0);
+                    this.ctx.strokeText(text, radius * 0.7, 0);
+                    this.ctx.fillText(text, radius * 0.7, 0);
                 } else {
                     // Two lines
                     const words = text.split(' ');
@@ -334,7 +337,7 @@ class RomanticRoulette {
                     let currentLength = 0;
                     
                     for (const word of words) {
-                        if (currentLength + word.length + 1 <= maxLength / 2 && line1.length < 3) {
+                        if (currentLength + word.length + 1 <= maxLength / 2 && line1.length < 4) {
                             line1.push(word);
                             currentLength += word.length + 1;
                         } else {
@@ -348,14 +351,14 @@ class RomanticRoulette {
                     if (text2.length === 0) {
                         // Fallback: truncate
                         const truncated = text.substring(0, maxLength - 3) + '...';
-                        this.ctx.strokeText(truncated, radius * 0.65, 0);
-                        this.ctx.fillText(truncated, radius * 0.65, 0);
+                        this.ctx.strokeText(truncated, radius * 0.7, 0);
+                        this.ctx.fillText(truncated, radius * 0.7, 0);
                     } else {
                         // Two lines
-                        this.ctx.strokeText(text1, radius * 0.65, -fontSize/2);
-                        this.ctx.fillText(text1, radius * 0.65, -fontSize/2);
-                        this.ctx.strokeText(text2, radius * 0.65, fontSize/2);
-                        this.ctx.fillText(text2, radius * 0.65, fontSize/2);
+                        this.ctx.strokeText(text1, radius * 0.7, -fontSize * 0.6);
+                        this.ctx.fillText(text1, radius * 0.7, -fontSize * 0.6);
+                        this.ctx.strokeText(text2, radius * 0.7, fontSize * 0.6);
+                        this.ctx.fillText(text2, radius * 0.7, fontSize * 0.6);
                     }
                 }
                 
@@ -365,9 +368,10 @@ class RomanticRoulette {
                 this.ctx.save();
                 this.ctx.rotate(startAngle + anglePerSegment / 2);
                 this.ctx.textAlign = 'center';
+                this.ctx.textBaseline = 'middle';
                 const iconSize = Math.max(24, radius * 0.08);
                 this.ctx.font = `${iconSize}px Arial`;
-                this.ctx.fillText('🎁✨', radius * 0.65, 10);
+                this.ctx.fillText('🎁✨', radius * 0.7, 0);
                 this.ctx.restore();
             }
         }
@@ -470,7 +474,7 @@ class RomanticRoulette {
         
         // Smooth animation
         const startTime = Date.now();
-        const duration = 5500; // Much slower for suspense
+        const duration = 6000; // Slower for better suspense
         const startRotation = this.rotation;
         
         let lastSegment = -1;
@@ -479,12 +483,13 @@ class RomanticRoulette {
             const elapsed = Date.now() - startTime;
             const progress = Math.min(elapsed / duration, 1);
             
-            // Advanced easing with dramatic slowdown
-            const easeOut = progress < 0.7 ? 
-                Math.pow(progress / 0.7, 2) * 0.95 : 
-                0.95 + (1 - 0.95) * Math.pow((progress - 0.7) / 0.3, 4);
+            // Smooth easing function - gradual deceleration
+            const easeOut = 1 - Math.pow(1 - progress, 3.5);
             
             this.rotation = startRotation + (finalRotation - startRotation) * easeOut;
+            
+            // Ensure smooth frame-by-frame rotation
+            this.rotation = this.rotation % 360;
             this.drawWheel();
             
             // Add tick sound effect when crossing segments
