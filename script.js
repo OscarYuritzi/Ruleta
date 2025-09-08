@@ -172,31 +172,45 @@ class RomanticRoulette {
         this.canvas = document.getElementById('wheel-canvas');
         this.ctx = this.canvas.getContext('2d');
         
-        // Get container width for responsive sizing
+        // Cálculo automático basado en viewport disponible
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
         const container = this.canvas.parentElement;
-        const containerWidth = container.offsetWidth;
         
-        // Different max sizes for different screen sizes - ALL LARGE but within limits
-        let maxSize;
-        if (window.innerWidth > 768) {
-            // Desktop: very large
-            maxSize = Math.min(containerWidth - 40, 1200); // Max 1200px, some margin
-        } else if (window.innerWidth > 480) {
-            // Tablet: large 
-            maxSize = Math.min(containerWidth - 30, 900); // Max 900px, some margin
+        // Calcular espacio disponible real
+        const headerHeight = document.querySelector('.header').offsetHeight || 100;
+        const availableHeight = viewportHeight - headerHeight - 200; // 200px para botones y espaciado
+        const availableWidth = container.offsetWidth - 40; // 40px total de padding
+        
+        // El tamaño será el menor entre ancho y alto disponible para mantener cuadrado
+        const maxSize = Math.min(availableWidth, availableHeight);
+        
+        // Aplicar límites seguros por dispositivo
+        let finalSize;
+        if (viewportWidth > 1024) {
+            // Desktop: máximo 80% del viewport pero no más de 1000px
+            finalSize = Math.min(maxSize, Math.min(viewportWidth * 0.8, 1000));
+        } else if (viewportWidth > 768) {
+            // Tablet: máximo 85% del viewport
+            finalSize = Math.min(maxSize, viewportWidth * 0.85);
         } else {
-            // Mobile: large but fits
-            maxSize = Math.min(containerWidth - 20, 700); // Max 700px, minimal margin
+            // Móvil: máximo 90% del viewport
+            finalSize = Math.min(maxSize, viewportWidth * 0.9);
         }
+        
+        // Asegurar tamaño mínimo
+        finalSize = Math.max(finalSize, 300);
         
         // Set actual canvas size for crisp rendering
         const scale = window.devicePixelRatio || 1;
-        this.canvas.width = maxSize * scale;
-        this.canvas.height = maxSize * scale;
+        this.canvas.width = finalSize * scale;
+        this.canvas.height = finalSize * scale;
         this.ctx.scale(scale, scale);
         
-        // Store canvas size for drawing
-        this.canvasSize = maxSize;
+        // Store canvas size for drawing and set CSS size
+        this.canvasSize = finalSize;
+        this.canvas.style.width = finalSize + 'px';
+        this.canvas.style.height = finalSize + 'px';
         
         this.drawWheel();
     }
