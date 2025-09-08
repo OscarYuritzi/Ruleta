@@ -507,6 +507,7 @@ class RomanticRoulette {
         };
         
         animate();
+    }
 
     showResult(segmentIndex) {
         const result = this.options[segmentIndex];
