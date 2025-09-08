@@ -429,6 +429,41 @@ function App() {
                 >
                   <Plus size={16} className="mx-auto" />
                 </button>
+                <button
+                  onClick={spinWheel}
+                  disabled={isSpinning || options.length < 2}
+                  className="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-3 rounded-xl hover:shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed min-w-[120px] text-sm font-medium whitespace-nowrap"
+                >
+                  {isSpinning ? (
+                    <div className="flex items-center justify-center gap-2">
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      <span>Girando...</span>
+                    </div>
+                  ) : options.length < 2 ? (
+                    'Agrega opciones'
+                  ) : (
+                    '🎯 Girar ruleta'
+                  )}
+                </button>
+              </div>
+            )}
+
+            {wheelType === 'surprise' && (
+              <div className="flex justify-center mb-4">
+                <button
+                  onClick={spinWheel}
+                  disabled={isSpinning || options.length < 2}
+                  className="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-8 py-4 rounded-xl hover:shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-lg font-medium"
+                >
+                  {isSpinning ? (
+                    <div className="flex items-center justify-center gap-2">
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      <span>Girando...</span>
+                    </div>
+                  ) : (
+                    '🎯 Girar ruleta'
+                  )}
+                </button>
               </div>
             )}
 
@@ -479,18 +514,18 @@ function App() {
               {/* Wheel container - Much larger size */}
               <div className="relative mb-6">
                 {/* Pointer */}
-                <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 z-10 text-4xl">
+                <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 z-10 text-5xl">
                   📍
                 </div>
                 
                 {/* Canvas - Extra large sizing */}
                 <canvas
                   ref={canvasRef}
-                  className="rounded-full shadow-xl border-4 border-white transition-transform duration-3000 ease-out block mx-auto"
+                  className="rounded-full shadow-2xl border-8 border-white transition-transform duration-3000 ease-out block mx-auto"
                   style={{
                     transform: `rotate(${rotation}deg)`,
-                    width: '480px',
-                    height: '480px'
+                    width: '600px',
+                    height: '600px'
                   }}
                 />
               </div>
@@ -505,26 +540,6 @@ function App() {
           </div>
         </div>
 
-        {/* Spin Button - Fixed at bottom of screen */}
-        <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-20">
-          <button
-            onClick={spinWheel}
-            disabled={isSpinning || options.length < 2}
-            className="bg-gradient-to-r from-pink-500 to-purple-600 text-white px-8 py-4 rounded-full font-bold text-xl shadow-2xl hover:shadow-3xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-110 border-4 border-white"
-            style={{ minWidth: '200px' }}
-          >
-            {isSpinning ? (
-              <div className="flex items-center justify-center gap-3">
-                <div className="w-6 h-6 border-3 border-white border-t-transparent rounded-full animate-spin"></div>
-                <span>Girando... 💫</span>
-              </div>
-            ) : options.length < 2 ? (
-              <span>Agrega opciones ✨</span>
-            ) : (
-              <span>🎯 GIRAR 💕</span>
-            )}
-          </button>
-          </div>
       </main>
 
       {/* Result Modal */}

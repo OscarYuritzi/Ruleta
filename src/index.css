@@ -41,31 +41,38 @@
 }
 
 /* Responsive canvas sizing */
-@media (max-width: 480px) {
+@media (max-width: 640px) {
   canvas {
-    width: 350px !important;
-    height: 350px !important;
+    width: 400px !important;
+    height: 400px !important;
   }
 }
 
-@media (max-width: 640px) {
+@media (max-width: 768px) {
   canvas {
-    width: 380px !important;
-    height: 380px !important;
+    width: 480px !important;
+    height: 480px !important;
   }
 }
 
 @media (min-width: 768px) {
   canvas {
-    width: 520px !important;
-    height: 520px !important;
+    width: 600px !important;
+    height: 600px !important;
   }
 }
 
 @media (min-width: 1024px) {
   canvas {
-    width: 560px !important;
-    height: 560px !important;
+    width: 650px !important;
+    height: 650px !important;
+  }
+}
+
+@media (min-width: 1280px) {
+  canvas {
+    width: 700px !important;
+    height: 700px !important;
   }
 }
 
