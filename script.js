@@ -396,21 +396,6 @@ class RomanticRoulette {
                 color: white;
                 transition: all 0.3s ease;
                 opacity: 0.8;
-            `;
-            
-            // Hover effect for better visibility when needed
-            activeUsersPanel.addEventListener('mouseenter', () => {
-                activeUsersPanel.style.opacity = '1';
-                activeUsersPanel.style.transform = 'scale(1.05)';
-            });
-            
-            activeUsersPanel.addEventListener('mouseleave', () => {
-                activeUsersPanel.style.opacity = '0.8';
-                activeUsersPanel.style.transform = 'scale(1)';
-            });
-            
-            document.body.appendChild(activeUsersPanel);
-        }
 
         // Filtrar sesiones activas (últimos 5 minutos)
         const now = new Date();
