@@ -549,22 +549,19 @@ function showPartnerResult(partnerName, result) {
     if (resultText && resultModal) {
         resultText.innerHTML = `
             <div style="margin-bottom: 15px; color: #e30070; font-size: 1.2rem;">
-                💕 Resultado de tu pareja ${partnerName}:
+                🎯 Resultado de ${partnerName}:
             </div>
             <div style="font-size: 1.6rem; font-weight: bold; line-height: 1.4;">
                 ${result}
-            </div>
-            <div style="margin-top: 20px; font-size: 1rem; color: #cc0066; font-style: italic;">
-                ¡Tu pareja ha girado la ruleta! 🎯✨
             </div>
         `;
         
         resultModal.classList.add('show');
         
-        // Auto-close after 10 seconds (más tiempo para leer)
+        // Auto-close after 8 seconds
         setTimeout(() => {
             resultModal.classList.remove('show');
-        }, 10000);
+        }, 8000);
     }
 }
 
@@ -942,7 +939,6 @@ async function spinWheel() {
         const result = currentOptions[segmentIndex];
         
         console.log(`🎉 Resultado: ${result}`);
-        console.log(`📤 Enviando resultado a pareja: ${result}`);
         
         isSpinning = false;
         spinBtn.textContent = '🎯 Girar Ruleta';
@@ -950,7 +946,7 @@ async function spinWheel() {
         
         // Notify partner with result
         if (currentUserSession) {
-            const updateResult = await updateSpinningState(
+            await updateSpinningState(
                 currentUserSession.id,
                 false,
                 wheelRotation,
@@ -958,12 +954,6 @@ async function spinWheel() {
                 currentOptions,
                 result
             );
-            
-            if (updateResult.error) {
-                console.error('❌ Error enviando resultado a pareja:', updateResult.error);
-            } else {
-                console.log('✅ Resultado enviado exitosamente a pareja');
-            }
         }
         
         // Show result
