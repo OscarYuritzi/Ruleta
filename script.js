@@ -226,24 +226,8 @@ class RomanticRoulette {
 
     drawWheel() {
         if (!this.ctx || this.options.length === 0) {
-            this.drawEmptyWheel();
-            return;
-        }
-        
-        const centerX = 300;
-        const centerY = 300;
-        const radius = 250;
-        const segments = this.options.length;
-        const anglePerSegment = (2 * Math.PI) / segments;
-        
-        // Princess color palette - elegant and bright
-        const princessColors = [
-            '#FF69B4', '#FFB6C1', '#FF1493', '#FFE4E1',
-            '#DDA0DD', '#DA70D6', '#BA55D3', '#9370DB',
-            '#FF6347', '#FFA07A', '#FFD700', '#FFFF00',
-            '#98FB98', '#87CEEB', '#87CEFA', '#B0E0E6',
-            '#F0E68C', '#FFEFD5', '#FFDAB9', '#FFE4B5'
-        ];
+        // Fucsia color scheme - only 3 colors
+        const fucsiaColors = ['#e30052', '#ffffff']; // Alternate between fucsia and white
         
         this.ctx.clearRect(0, 0, 600, 600);
         this.ctx.save();
@@ -264,7 +248,7 @@ class RomanticRoulette {
         for (let i = 0; i < segments; i++) {
             const startAngle = i * anglePerSegment;
             const endAngle = (i + 1) * anglePerSegment;
-            const color = princessColors[i % princessColors.length];
+            const color = fucsiaColors[i % fucsiaColors.length];
             
             // Highlight current segment during spin
             const isHighlighted = this.currentHighlight === i;
@@ -275,22 +259,12 @@ class RomanticRoulette {
             this.ctx.lineTo(0, 0);
             
             // Create beautiful gradient for each segment
-            const segmentGradient = this.ctx.createRadialGradient(0, 0, 0, 0, 0, radius);
-            if (isHighlighted) {
-                segmentGradient.addColorStop(0, '#FFFF00');
-                segmentGradient.addColorStop(0.3, '#FFD700');
-                segmentGradient.addColorStop(1, color);
-            } else {
-                segmentGradient.addColorStop(0, '#FFFFFF');
-                segmentGradient.addColorStop(0.3, color);
-            }
-            segmentGradient.addColorStop(1, color);
-            this.ctx.fillStyle = segmentGradient;
+            this.ctx.fillStyle = isHighlighted ? '#FFD700' : color;
             this.ctx.fill();
             
             // Add sparkle effect border
-            this.ctx.strokeStyle = 'white';
-            this.ctx.lineWidth = 4;
+            this.ctx.strokeStyle = '#000000';
+            this.ctx.lineWidth = 3;
             this.ctx.stroke();
             
             // Add inner shadow for depth
@@ -306,26 +280,27 @@ class RomanticRoulette {
                 this.ctx.save();
                 this.ctx.rotate(startAngle + anglePerSegment / 2);
                 this.ctx.textAlign = 'center';
+                this.ctx.textBaseline = 'middle';
                 
                 // Beautiful text styling
-                const fontSize = Math.max(14, Math.min(20, radius * 0.06));
-                this.ctx.font = `bold ${fontSize}px 'Dancing Script', cursive`;
-                this.ctx.fillStyle = '#FFFFFF';
-                this.ctx.strokeStyle = '#4A0E4E';
+                const fontSize = Math.max(12, Math.min(18, radius * 0.05));
+                this.ctx.font = `bold ${fontSize}px Arial`;
+                
+                // Use fucsia color scheme
+                const isFucsiaSegment = i % 2 === 0;
+                this.ctx.fillStyle = isFucsiaSegment ? '#ffffff' : '#000000';
+                this.ctx.strokeStyle = isFucsiaSegment ? '#000000' : '#ffffff';
                 this.ctx.lineWidth = 3;
-                this.ctx.shadowColor = 'rgba(0,0,0,0.8)';
-                this.ctx.shadowBlur = 4;
-                this.ctx.shadowOffsetX = 2;
-                this.ctx.shadowOffsetY = 2;
 
                 // Smart text display
                 const text = this.options[i];
-                const maxLength = radius > 200 ? 35 : radius > 150 ? 28 : 20;
+                const maxLength = segments > 8 ? 15 : segments > 6 ? 20 : 25;
+                const textRadius = radius * 0.7; // Keep text well within bounds
                 
                 if (text.length <= maxLength) {
                     // Single line
-                    this.ctx.strokeText(text, radius * 0.65, 0);
-                    this.ctx.fillText(text, radius * 0.65, 0);
+                    this.ctx.strokeText(text, textRadius, 0);
+                    this.ctx.fillText(text, textRadius, 0);
                 } else {
                     // Two lines
                     const words = text.split(' ');
@@ -347,15 +322,15 @@ class RomanticRoulette {
                     
                     if (text2.length === 0) {
                         // Fallback: truncate
-                        const truncated = text.substring(0, maxLength - 3) + '...';
-                        this.ctx.strokeText(truncated, radius * 0.65, 0);
-                        this.ctx.fillText(truncated, radius * 0.65, 0);
+                        const truncated = text.substring(0, maxLength - 2) + '..';
+                        this.ctx.strokeText(truncated, textRadius, 0);
+                        this.ctx.fillText(truncated, textRadius, 0);
                     } else {
                         // Two lines
-                        this.ctx.strokeText(text1, radius * 0.65, -fontSize/2);
-                        this.ctx.fillText(text1, radius * 0.65, -fontSize/2);
-                        this.ctx.strokeText(text2, radius * 0.65, fontSize/2);
-                        this.ctx.fillText(text2, radius * 0.65, fontSize/2);
+                        this.ctx.strokeText(text1, textRadius, -fontSize/2);
+                        this.ctx.fillText(text1, textRadius, -fontSize/2);
+                        this.ctx.strokeText(text2, textRadius, fontSize/2);
+                        this.ctx.fillText(text2, textRadius, fontSize/2);
                     }
                 }
                 
@@ -367,42 +342,30 @@ class RomanticRoulette {
                 this.ctx.textAlign = 'center';
                 const iconSize = Math.max(24, radius * 0.08);
                 this.ctx.font = `${iconSize}px Arial`;
-                this.ctx.fillText('🎁✨', radius * 0.65, 10);
+                this.ctx.fillText('🎁✨', radius * 0.7, 10);
                 this.ctx.restore();
             }
         }
 
         this.ctx.restore();
 
-        // Draw beautiful center jewel
+        // Draw center circle with fucsia scheme
         this.ctx.beginPath();
         this.ctx.arc(centerX, centerY, 45, 0, 2 * Math.PI);
-        
-        // Center gradient - like a precious gem
-        const centerGradient = this.ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, 45);
-        centerGradient.addColorStop(0, '#FFFFFF');
-        centerGradient.addColorStop(0.3, '#FFD700');
-        centerGradient.addColorStop(0.7, '#FF69B4');
-        centerGradient.addColorStop(1, '#8A2BE2');
-        this.ctx.fillStyle = centerGradient;
+        this.ctx.fillStyle = '#e30052';
         this.ctx.fill();
         
-        // Multiple decorative borders
-        this.ctx.strokeStyle = '#FFFFFF';
-        this.ctx.lineWidth = 6;
+        // Border
+        this.ctx.strokeStyle = '#000000';
+        this.ctx.lineWidth = 4;
         this.ctx.stroke();
         
-        this.ctx.beginPath();
-        this.ctx.arc(centerX, centerY, 38, 0, 2 * Math.PI);
-        this.ctx.strokeStyle = '#FFD700';
-        this.ctx.lineWidth = 3;
-        this.ctx.stroke();
-        
-        // Center crown emoji
+        // Center heart emoji
         this.ctx.textAlign = 'center';
         this.ctx.textBaseline = 'middle';
-        this.ctx.font = '32px Arial';
-        this.ctx.fillText('👑', centerX, centerY);
+        this.ctx.font = '28px Arial';
+        this.ctx.fillStyle = '#ffffff';
+        this.ctx.fillText('💕', centerX, centerY);
     }
 
     drawEmptyWheel() {
@@ -414,36 +377,34 @@ class RomanticRoulette {
         
         this.ctx.clearRect(0, 0, 600, 600);
         
-        // Draw empty circle with princess gradient
+        // Draw empty circle with fucsia scheme
         this.ctx.beginPath();
         this.ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
-        const emptyGradient = this.ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius);
-        emptyGradient.addColorStop(0, '#FFFFFF');
-        emptyGradient.addColorStop(0.5, '#FFB6C1');
-        emptyGradient.addColorStop(1, '#FF69B4');
-        this.ctx.fillStyle = emptyGradient;
+        this.ctx.fillStyle = '#ffffff';
         this.ctx.fill();
-        this.ctx.strokeStyle = '#FF1493';
-        this.ctx.lineWidth = 6;
+        this.ctx.strokeStyle = '#e30052';
+        this.ctx.lineWidth = 4;
         this.ctx.stroke();
         
         // Draw message
-        this.ctx.fillStyle = '#8A2BE2';
-        this.ctx.font = 'bold 24px Dancing Script';
+        this.ctx.fillStyle = '#000000';
+        this.ctx.font = 'bold 20px Arial';
         this.ctx.textAlign = 'center';
+        this.ctx.textBaseline = 'middle';
         this.ctx.fillText('Agrega opciones', centerX, centerY - 10);
-        this.ctx.fillText('románticas 💕', centerX, centerY + 20);
+        this.ctx.fillText('románticas 💕', centerX, centerY + 15);
         
-        // Draw center jewel
+        // Draw center
         this.ctx.beginPath();
         this.ctx.arc(centerX, centerY, 45, 0, 2 * Math.PI);
-        this.ctx.fillStyle = '#FFD700';
+        this.ctx.fillStyle = '#e30052';
         this.ctx.fill();
-        this.ctx.strokeStyle = '#FFFFFF';
+        this.ctx.strokeStyle = '#000000';
         this.ctx.lineWidth = 4;
         this.ctx.stroke();
-        this.ctx.font = '32px Arial';
-        this.ctx.fillText('👑', centerX, centerY);
+        this.ctx.font = '28px Arial';
+        this.ctx.fillStyle = '#ffffff';
+        this.ctx.fillText('💕', centerX, centerY);
     }
 
     spinWheel() {
@@ -479,10 +440,8 @@ class RomanticRoulette {
             const elapsed = Date.now() - startTime;
             const progress = Math.min(elapsed / duration, 1);
             
-            // Advanced easing with dramatic slowdown
-            const easeOut = progress < 0.7 ? 
-                Math.pow(progress / 0.7, 2) * 0.95 : 
-                0.95 + (1 - 0.95) * Math.pow((progress - 0.7) / 0.3, 4);
+            // Smooth gradual easing - no sudden stops
+            const easeOut = 1 - Math.pow(1 - progress, 4);
             
             this.rotation = startRotation + (finalRotation - startRotation) * easeOut;
             this.drawWheel();
