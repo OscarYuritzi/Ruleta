@@ -472,62 +472,6 @@ function handleRealtimeUpdate(payload) {
         }
     }
 }
-                    currentUserSession.id,
-                    false,
-                    wheelRotation,
-                    currentWheelType,
-                    currentOptions
-                );
-            }
-        }
-    }
-    
-    if (eventType === 'DELETE' && oldRecord && oldRecord.user_name !== currentUser) {
-        console.log(`👋 Partner desconectado: ${oldRecord.user_name}`);
-        connectedPartners = connectedPartners.filter(name => name !== oldRecord.user_name);
-        updatePartnerStatus();
-        showPartnerConnectionNotification(oldRecord.user_name, 'disconnected');
-    }
-    
-    if (eventType === 'UPDATE' && newRecord) {
-        // Handle partner activity updates
-        if (newRecord.user_name !== currentUser) {
-            // Update partners list if partner is active
-            const isPartnerActive = new Date(newRecord.last_activity) > new Date(Date.now() - 5 * 60 * 1000);
-            const isInPartnersList = connectedPartners.includes(newRecord.user_name);
-            
-            if (isPartnerActive && !isInPartnersList) {
-                connectedPartners.push(newRecord.user_name);
-                updatePartnerStatus();
-                showPartnerConnectionNotification(newRecord.user_name, 'joining');
-            } else if (!isPartnerActive && isInPartnersList) {
-                connectedPartners = connectedPartners.filter(name => name !== newRecord.user_name);
-                updatePartnerStatus();
-                showPartnerConnectionNotification(newRecord.user_name, 'disconnected');
-            }
-        }
-        
-        // Partner started spinning
-        if (newRecord.is_spinning && !oldRecord?.is_spinning && newRecord.user_name !== currentUser) {
-            console.log(`🎯 ${newRecord.user_name} comenzó a girar`);
-            syncPartnerSpin(newRecord);
-        }
-        
-        // Partner finished spinning
-        if (!newRecord.is_spinning && oldRecord?.is_spinning && newRecord.user_name !== currentUser) {
-            console.log(`🎉 ${newRecord.user_name} terminó de girar:`, newRecord.last_result);
-            syncPartnerResult(newRecord);
-        }
-        
-        // Partner changed wheel type or options
-        if (newRecord.user_name !== currentUser && 
-            (newRecord.wheel_type !== oldRecord?.wheel_type || 
-            JSON.stringify(newRecord.current_options) !== JSON.stringify(oldRecord?.current_options))) {
-            console.log(`🔄 ${newRecord.user_name} cambió la ruleta`);
-            syncPartnerWheel(newRecord);
-        }
-    }
-}
 
 // Sync partner spinning
 function syncPartnerSpin(partnerSession) {
