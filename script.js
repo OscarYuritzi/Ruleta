@@ -145,9 +145,6 @@ async function connectCouple() {
         // Setup realtime subscription
         await setupRealtimeSubscription();
         
-        // Small delay to ensure subscription is active
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
         // Check for existing partners and notify
         await checkExistingPartners();
         
@@ -475,6 +472,7 @@ function syncPartnerResult(partnerSession) {
     
     // Avoid showing the same result multiple times
     const resultKey = `${partnerName}-${result}-${partnerSession.id}-${partnerSession.last_activity}`;
+    if (lastProcessedResult === resultKey) {
         console.log('🔄 Resultado ya procesado, ignorando');
         return;
     }
@@ -944,7 +942,6 @@ async function spinWheel() {
         const result = currentOptions[segmentIndex];
         
         console.log(`🎉 Resultado: ${result}`);
-        console.log(`📤 Enviando resultado a pareja: ${result}`);
         
         isSpinning = false;
         spinBtn.textContent = '🎯 Girar Ruleta';
@@ -952,7 +949,7 @@ async function spinWheel() {
         
         // Notify partner with result
         if (currentUserSession) {
-            const updateResult = await updateSpinningState(
+            await updateSpinningState(
                 currentUserSession.id,
                 false,
                 wheelRotation,
@@ -960,12 +957,6 @@ async function spinWheel() {
                 currentOptions,
                 result
             );
-            
-            if (updateResult.error) {
-                console.error('❌ Error enviando resultado a pareja:', updateResult.error);
-            } else {
-                console.log('✅ Resultado enviado exitosamente a pareja');
-            }
         }
         
         // Show result
