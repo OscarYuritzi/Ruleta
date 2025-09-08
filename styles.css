@@ -582,7 +582,7 @@ body {
     width: 100%;
     height: auto;
     display: block;
-    max-width: 1000px; /* Desktop más grande */
+    max-width: 1200px; /* Desktop mucho más grande */
     aspect-ratio: 1;
 }
 
@@ -784,14 +784,14 @@ body {
     }
     
     .wheel-container {
-        padding: 0 5px; /* Menos padding para más espacio */
+        padding: 0; /* Sin padding para más espacio */
         gap: 10px;
     }
     
     #wheel-canvas {
         border: 4px solid #ffffff;
         outline: 2px solid #e30052;
-        max-width: 750px; /* Tablet mucho más grande */
+        max-width: 900px; /* Tablet súper grande */
     }
     
     .logo {
@@ -830,7 +830,7 @@ body {
     }
     
     .wheel-creator {
-        padding: 30px 20px;
+        padding: 20px 10px; /* Mínimo padding para más espacio ruleta */
     }
     
     .creator-content {
@@ -904,7 +904,7 @@ body {
     #wheel-canvas {
         border: 3px solid #ffffff;
         outline: 2px solid #e30052;
-        max-width: 600px; /* Móvil más grande */
+        max-width: 700px; /* Móvil súper grande */
     }
     
     .container {

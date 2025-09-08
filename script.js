@@ -180,13 +180,13 @@ class RomanticRoulette {
         let maxSize;
         if (window.innerWidth > 768) {
             // Desktop: very large
-            maxSize = Math.min(containerWidth - 40, 900); // Max 900px, some margin
+            maxSize = Math.min(containerWidth - 40, 1200); // Max 1200px, some margin
         } else if (window.innerWidth > 480) {
             // Tablet: large 
-            maxSize = Math.min(containerWidth - 30, 650); // Max 650px, some margin
+            maxSize = Math.min(containerWidth - 30, 900); // Max 900px, some margin
         } else {
             // Mobile: large but fits
-            maxSize = Math.min(containerWidth - 20, 480); // Max 480px, minimal margin
+            maxSize = Math.min(containerWidth - 20, 700); // Max 700px, minimal margin
         }
         
         // Set actual canvas size for crisp rendering
