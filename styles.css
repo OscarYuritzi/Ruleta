@@ -7,7 +7,7 @@
 
 body {
     font-family: 'Poppins', sans-serif;
-    background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #fecfef 100%);
+    background: linear-gradient(135deg, #ffffff 0%, #e30052 50%, #ffffff 100%);
     min-height: 100vh;
     overflow-x: hidden;
     position: relative;
@@ -63,10 +63,7 @@ body {
     font-family: 'Dancing Script', cursive;
     font-size: 2.5rem;
     font-weight: 700;
-    background: linear-gradient(45deg, #ff6b9d, #c44569, #f8b500);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    color: #e30052;
     margin-bottom: 10px;
     display: inline-block;
 }
@@ -98,7 +95,7 @@ body {
 .wheel-selection h2 {
     font-family: 'Dancing Script', cursive;
     font-size: 2.5rem;
-    color: #c44569;
+    color: #e30052;
     margin-bottom: 40px;
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
 }
@@ -111,39 +108,23 @@ body {
 }
 
 .wheel-card {
-    background: linear-gradient(145deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7));
+    background: #ffffff;
     backdrop-filter: blur(10px);
     border-radius: 20px;
     padding: 40px 30px;
     cursor: pointer;
     transition: all 0.4s ease;
-    border: 2px solid transparent;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    border: 2px solid #000000;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
     position: relative;
     overflow: hidden;
 }
 
-.wheel-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(45deg, #ff9a9e, #fad0c4);
-    opacity: 0;
-    transition: opacity 0.4s ease;
-    z-index: -1;
-}
-
 .wheel-card:hover {
     transform: translateY(-10px) scale(1.02);
-    border-color: #ff6b9d;
-    box-shadow: 0 20px 60px rgba(255, 107, 157, 0.3);
-}
-
-.wheel-card:hover::before {
-    opacity: 0.1;
+    background: #e30052;
+    color: #ffffff;
+    box-shadow: 0 20px 60px rgba(227, 0, 82, 0.3);
 }
 
 .card-icon {
@@ -161,16 +142,24 @@ body {
 .wheel-card h3 {
     font-family: 'Dancing Script', cursive;
     font-size: 1.8rem;
-    color: #c44569;
+    color: #e30052;
     margin-bottom: 15px;
     font-weight: 600;
 }
 
+.wheel-card:hover h3 {
+    color: #ffffff;
+}
+
 .wheel-card p {
-    color: #666;
+    color: #000000;
     font-size: 1rem;
     line-height: 1.6;
     margin-bottom: 20px;
+}
+
+.wheel-card:hover p {
+    color: #ffffff;
 }
 
 .card-emoji {
@@ -180,11 +169,12 @@ body {
 
 /* Wheel Creator */
 .wheel-creator {
-    background: rgba(255, 255, 255, 0.9);
+    background: #ffffff;
     backdrop-filter: blur(10px);
     border-radius: 25px;
     padding: 40px;
-    box-shadow: 0 15px 50px rgba(0, 0, 0, 0.1);
+    border: 2px solid #000000;
+    box-shadow: 0 15px 50px rgba(0, 0, 0, 0.2);
     margin-bottom: 40px;
 }
 
@@ -196,26 +186,27 @@ body {
 }
 
 .back-btn {
-    background: linear-gradient(45deg, #ff6b9d, #c44569);
+    background: #e30052;
     color: white;
-    border: none;
+    border: 2px solid #000000;
     padding: 12px 24px;
     border-radius: 25px;
     cursor: pointer;
     font-weight: 600;
     transition: all 0.3s ease;
-    box-shadow: 0 5px 20px rgba(255, 107, 157, 0.3);
+    box-shadow: 0 5px 20px rgba(227, 0, 82, 0.3);
 }
 
 .back-btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 10px 30px rgba(255, 107, 157, 0.4);
+    background: #000000;
+    border-color: #e30052;
 }
 
 #creator-title {
     font-family: 'Dancing Script', cursive;
     font-size: 2.5rem;
-    color: #c44569;
+    color: #e30052;
     font-weight: 700;
 }
 
@@ -230,7 +221,7 @@ body {
 .options-panel h3 {
     font-family: 'Dancing Script', cursive;
     font-size: 1.8rem;
-    color: #c44569;
+    color: #e30052;
     margin-bottom: 25px;
     font-weight: 600;
 }
@@ -246,23 +237,23 @@ body {
     flex: 1;
     min-width: 200px;
     padding: 15px 20px;
-    border: 2px solid #fbb6ce;
+    border: 2px solid #000000;
     border-radius: 25px;
     font-size: 1rem;
     outline: none;
     transition: all 0.3s ease;
-    background: rgba(255, 255, 255, 0.9);
+    background: #ffffff;
 }
 
 #option-input:focus {
-    border-color: #ff6b9d;
-    box-shadow: 0 0 20px rgba(255, 107, 157, 0.2);
+    border-color: #e30052;
+    box-shadow: 0 0 20px rgba(227, 0, 82, 0.2);
 }
 
 .add-btn {
-    background: linear-gradient(45deg, #ff6b9d, #c44569);
+    background: #e30052;
     color: white;
-    border: none;
+    border: 2px solid #000000;
     padding: 15px 25px;
     border-radius: 25px;
     cursor: pointer;
@@ -273,13 +264,14 @@ body {
 
 .add-btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 10px 30px rgba(255, 107, 157, 0.3);
+    background: #000000;
+    border-color: #e30052;
 }
 
 .spin-button-inline {
-    background: linear-gradient(45deg, #4CAF50, #45a049);
+    background: #e30052;
     color: white;
-    border: none;
+    border: 2px solid #000000;
     padding: 15px 25px;
     border-radius: 25px;
     cursor: pointer;
@@ -291,7 +283,8 @@ body {
 
 .spin-button-inline:hover {
     transform: translateY(-2px);
-    box-shadow: 0 10px 30px rgba(76, 175, 80, 0.3);
+    background: #000000;
+    border-color: #e30052;
 }
 
 .spin-button-inline:disabled {
@@ -308,8 +301,8 @@ body {
 }
 
 .option-item {
-    background: linear-gradient(145deg, rgba(255, 182, 206, 0.2), rgba(251, 182, 206, 0.1));
-    border: 1px solid #fbb6ce;
+    background: #ffffff;
+    border: 2px solid #000000;
     border-radius: 15px;
     padding: 15px 20px;
     margin-bottom: 10px;
@@ -321,19 +314,24 @@ body {
 
 .option-item:hover {
     transform: translateX(5px);
-    border-color: #ff6b9d;
+    background: #e30052;
+    color: #ffffff;
 }
 
 .option-text {
     flex: 1;
-    color: #666;
+    color: #000000;
     font-weight: 500;
 }
 
+.option-item:hover .option-text {
+    color: #ffffff;
+}
+
 .remove-option {
-    background: #ff6b9d;
+    background: #e30052;
     color: white;
-    border: none;
+    border: 2px solid #000000;
     padding: 8px 12px;
     border-radius: 20px;
     cursor: pointer;
@@ -342,7 +340,8 @@ body {
 }
 
 .remove-option:hover {
-    background: #c44569;
+    background: #000000;
+    border-color: #e30052;
     transform: scale(1.1);
 }
 
@@ -355,7 +354,7 @@ body {
 .clear-btn, .save-btn {
     flex: 1;
     padding: 15px 20px;
-    border: none;
+    border: 2px solid #000000;
     border-radius: 25px;
     cursor: pointer;
     font-weight: 600;
@@ -364,18 +363,20 @@ body {
 }
 
 .clear-btn {
-    background: linear-gradient(45deg, #f093fb, #f5576c);
+    background: #e30052;
     color: white;
 }
 
 .save-btn {
-    background: linear-gradient(45deg, #4facfe, #00f2fe);
+    background: #ffffff;
     color: white;
+    color: #000000;
 }
 
 .clear-btn:hover, .save-btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    background: #000000;
+    color: #ffffff;
 }
 
 /* Wheel Panel */
@@ -403,11 +404,11 @@ body {
 
 .pointer-arrow {
     font-size: 4rem;
-    color: #ff1493;
+    color: #e30052;
     text-shadow: 
-        0 0 10px rgba(255, 20, 147, 0.8),
-        0 0 20px rgba(255, 20, 147, 0.6),
-        0 0 30px rgba(255, 20, 147, 0.4);
+        0 0 10px rgba(227, 0, 82, 0.8),
+        0 0 20px rgba(227, 0, 82, 0.6),
+        0 0 30px rgba(227, 0, 82, 0.4);
     filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
     animation: pointerPulse 2s ease-in-out infinite;
     transition: all 0.3s ease;
@@ -420,7 +421,7 @@ body {
     transform: translate(-50%, -50%);
     width: 60px;
     height: 60px;
-    background: radial-gradient(circle, rgba(255, 20, 147, 0.3) 0%, transparent 70%);
+    background: radial-gradient(circle, rgba(227, 0, 82, 0.3) 0%, transparent 70%);
     border-radius: 50%;
     animation: glowPulse 1.5s ease-in-out infinite alternate;
 }
@@ -428,10 +429,10 @@ body {
 .wheel-pointer.spinning .pointer-arrow {
     animation: spinningPointer 0.3s linear infinite;
     text-shadow: 
-        0 0 15px rgba(255, 215, 0, 1),
-        0 0 25px rgba(255, 20, 147, 0.8),
-        0 0 35px rgba(255, 20, 147, 0.6);
-    color: #ffd700;
+        0 0 15px rgba(0, 0, 0, 1),
+        0 0 25px rgba(227, 0, 82, 0.8),
+        0 0 35px rgba(227, 0, 82, 0.6);
+    color: #000000;
 }
 
 @keyframes pointerPulse {
@@ -459,10 +460,9 @@ body {
     border-radius: 50%;
     box-shadow: 
         0 15px 50px rgba(0, 0, 0, 0.3),
-        0 0 30px rgba(255, 20, 147, 0.3),
+        0 0 30px rgba(227, 0, 82, 0.3),
         inset 0 0 20px rgba(255, 255, 255, 0.2);
-    border: 12px solid white;
-    border-image: linear-gradient(45deg, #ffd700, #ff69b4, #ffd700) 1;
+    border: 8px solid #000000;
     transition: transform 0.1s ease;
     width: 600px;
     height: 600px;
@@ -472,17 +472,18 @@ body {
 
 /* Saved Wheels */
 .saved-wheels {
-    background: rgba(255, 255, 255, 0.9);
+    background: #ffffff;
     backdrop-filter: blur(10px);
     border-radius: 25px;
     padding: 40px;
-    box-shadow: 0 15px 50px rgba(0, 0, 0, 0.1);
+    border: 2px solid #000000;
+    box-shadow: 0 15px 50px rgba(0, 0, 0, 0.2);
 }
 
 .saved-wheels h3 {
     font-family: 'Dancing Script', cursive;
     font-size: 2rem;
-    color: #c44569;
+    color: #e30052;
     margin-bottom: 30px;
     text-align: center;
     font-weight: 600;
@@ -495,34 +496,42 @@ body {
 }
 
 .saved-wheel-card {
-    background: linear-gradient(145deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7));
+    background: #ffffff;
     border-radius: 15px;
     padding: 20px;
     cursor: pointer;
     transition: all 0.3s ease;
-    border: 2px solid transparent;
+    border: 2px solid #000000;
     position: relative;
 }
 
 .saved-wheel-card:hover {
     transform: translateY(-5px);
-    border-color: #ff6b9d;
-    box-shadow: 0 15px 40px rgba(255, 107, 157, 0.2);
+    background: #e30052;
+    color: #ffffff;
+    box-shadow: 0 15px 40px rgba(227, 0, 82, 0.2);
 }
 
 .saved-wheel-title {
     font-weight: 600;
-    color: #c44569;
+    color: #e30052;
     margin-bottom: 10px;
     font-size: 1.1rem;
 }
 
+.saved-wheel-card:hover .saved-wheel-title {
+    color: #ffffff;
+}
+
 .saved-wheel-info {
-    color: #666;
+    color: #000000;
     font-size: 0.9rem;
     margin-bottom: 15px;
 }
 
+.saved-wheel-card:hover .saved-wheel-info {
+    color: #ffffff;
+}
 .saved-wheel-actions {
     display: flex;
     gap: 10px;
@@ -531,7 +540,7 @@ body {
 .load-wheel-btn, .delete-wheel-btn {
     flex: 1;
     padding: 10px 15px;
-    border: none;
+    border: 2px solid #000000;
     border-radius: 20px;
     cursor: pointer;
     font-weight: 600;
@@ -540,17 +549,19 @@ body {
 }
 
 .load-wheel-btn {
-    background: linear-gradient(45deg, #4facfe, #00f2fe);
-    color: white;
+    background: #ffffff;
+    color: #000000;
 }
 
 .delete-wheel-btn {
-    background: linear-gradient(45deg, #f093fb, #f5576c);
+    background: #e30052;
     color: white;
 }
 
 .load-wheel-btn:hover, .delete-wheel-btn:hover {
     transform: translateY(-2px);
+    background: #000000;
+    color: #ffffff;
 }
 
 /* Result Modal */
@@ -576,15 +587,15 @@ body {
 }
 
 .modal-content {
-    background: linear-gradient(145deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.9));
+    background: #ffffff;
     backdrop-filter: blur(20px);
     border-radius: 30px;
     padding: 50px 40px;
     text-align: center;
     max-width: 500px;
     width: 90%;
-    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.3);
-    border: 2px solid rgba(255, 255, 255, 0.8);
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5);
+    border: 3px solid #000000;
     transform: scale(0.8);
     transition: transform 0.3s ease;
 }
@@ -596,7 +607,7 @@ body {
 .result-header h2 {
     font-family: 'Dancing Script', cursive;
     font-size: 3rem;
-    color: #c44569;
+    color: #e30052;
     margin-bottom: 30px;
     font-weight: 700;
 }
@@ -614,14 +625,10 @@ body {
 
 .result-text {
     font-size: 1.8rem;
-    color: #666;
+    color: #000000;
     font-weight: 600;
     margin-bottom: 30px;
     line-height: 1.4;
-    background: linear-gradient(45deg, #ff6b9d, #c44569);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
 }
 
 .result-emojis {
@@ -638,7 +645,7 @@ body {
 
 .spin-again-btn, .close-btn {
     padding: 15px 30px;
-    border: none;
+    border: 2px solid #000000;
     border-radius: 25px;
     cursor: pointer;
     font-weight: 600;
@@ -647,18 +654,19 @@ body {
 }
 
 .spin-again-btn {
-    background: linear-gradient(45deg, #4facfe, #00f2fe);
-    color: white;
+    background: #ffffff;
+    color: #000000;
 }
 
 .close-btn {
-    background: linear-gradient(45deg, #ff6b9d, #c44569);
+    background: #e30052;
     color: white;
 }
 
 .spin-again-btn:hover, .close-btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    background: #000000;
+    color: #ffffff;
 }
 
 /* Responsive Design */
