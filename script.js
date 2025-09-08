@@ -347,33 +347,33 @@ class RomanticRoulette {
         
         this.ctx.clearRect(0, 0, 600, 600);
         
-        // Draw empty circle - white with fuchsia accent
+        // Draw empty circle with fuchsia scheme
         this.ctx.beginPath();
         this.ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
         this.ctx.fillStyle = '#ffffff';
         this.ctx.fill();
         this.ctx.strokeStyle = '#e30052';
-        this.ctx.lineWidth = 3;
+        this.ctx.lineWidth = 4;
         this.ctx.stroke();
         
         // Draw message
         this.ctx.fillStyle = '#000000';
-        this.ctx.font = 'bold 18px Arial';
+        this.ctx.font = 'bold 20px Arial';
         this.ctx.textAlign = 'center';
         this.ctx.textBaseline = 'middle';
         this.ctx.fillText('Agrega opciones', centerX, centerY - 10);
         this.ctx.fillText('románticas 💕', centerX, centerY + 15);
         
-        // Draw center - white with fuchsia border
+        // Draw center
         this.ctx.beginPath();
         this.ctx.arc(centerX, centerY, 45, 0, 2 * Math.PI);
-        this.ctx.fillStyle = '#ffffff';
+        this.ctx.fillStyle = '#e30052';
         this.ctx.fill();
-        this.ctx.strokeStyle = '#e30052';
-        this.ctx.lineWidth = 3;
+        this.ctx.strokeStyle = '#000000';
+        this.ctx.lineWidth = 4;
         this.ctx.stroke();
         this.ctx.font = '28px Arial';
-        this.ctx.fillStyle = '#e30052';
+        this.ctx.fillStyle = '#ffffff';
         this.ctx.fillText('💕', centerX, centerY);
     }
 
