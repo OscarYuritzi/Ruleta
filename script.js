@@ -685,7 +685,7 @@ class RomanticRoulette {
         const spinBtn = document.getElementById('spin-btn');
         spinBtn.disabled = this.options.length < 2;
         if (this.options.length >= 2) {
-            spinBtn.textContent = \`🎯 Girar ruleta`;
+            spinBtn.textContent = `🎯 Girar ruleta`;
         } else {
             spinBtn.textContent = 'Agrega más opciones ✨';
         }
