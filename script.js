@@ -175,7 +175,19 @@ class RomanticRoulette {
         // Get container width for responsive sizing
         const container = this.canvas.parentElement;
         const containerWidth = container.offsetWidth;
-        const maxSize = Math.min(containerWidth - 20, 1000); // Menos padding, tamaño máximo mayor
+        
+        // Different max sizes for different screen sizes - ALL LARGE but within limits
+        let maxSize;
+        if (window.innerWidth > 768) {
+            // Desktop: very large
+            maxSize = Math.min(containerWidth - 40, 900); // Max 900px, some margin
+        } else if (window.innerWidth > 480) {
+            // Tablet: large 
+            maxSize = Math.min(containerWidth - 30, 650); // Max 650px, some margin
+        } else {
+            // Mobile: large but fits
+            maxSize = Math.min(containerWidth - 20, 480); // Max 480px, minimal margin
+        }
         
         // Set actual canvas size for crisp rendering
         const scale = window.devicePixelRatio || 1;
