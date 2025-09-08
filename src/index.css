@@ -54,17 +54,31 @@ canvas {
     min-width: 44px;
   }
   
-  /* Smaller wheel on mobile */
+  /* Responsive wheel sizing */
+  canvas {
+    width: 320px !important;
+    height: 320px !important;
+  }
+}
+
+@media (max-width: 480px) {
   canvas {
     width: 280px !important;
     height: 280px !important;
   }
 }
 
-@media (max-width: 480px) {
+@media (min-width: 768px) {
   canvas {
-    width: 240px !important;
-    height: 240px !important;
+    width: 450px !important;
+    height: 450px !important;
+  }
+}
+
+@media (min-width: 1024px) {
+  canvas {
+    width: 500px !important;
+    height: 500px !important;
   }
 }
 

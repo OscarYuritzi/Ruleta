@@ -476,30 +476,30 @@ function App() {
           {/* Wheel panel */}
           <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-6 shadow-lg">
             <div className="flex flex-col items-center">
-              {/* Wheel container - Increased size and better spacing */}
-              <div className="relative mb-8">
+              {/* Wheel container - Much larger size */}
+              <div className="relative mb-6">
                 {/* Pointer */}
-                <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 z-10 text-3xl">
+                <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 z-10 text-4xl">
                   📍
                 </div>
                 
-                {/* Canvas - Larger responsive sizing */}
+                {/* Canvas - Much larger responsive sizing */}
                 <canvas
                   ref={canvasRef}
-                  className="rounded-full shadow-xl border-4 border-white transition-transform duration-3000 ease-out w-80 h-80 sm:w-96 sm:h-96 md:w-[28rem] md:h-[28rem]"
+                  className="rounded-full shadow-xl border-4 border-white transition-transform duration-3000 ease-out"
                   style={{
                     transform: `rotate(${rotation}deg)`,
-                    maxWidth: '100%',
-                    height: 'auto'
+                    width: '400px',
+                    height: '400px'
                   }}
                 />
               </div>
 
-              {/* Spin button - Moved outside and below the wheel */}
+              {/* Spin button - Completely separate from wheel */}
               <button
                 onClick={spinWheel}
                 disabled={isSpinning || options.length < 2}
-                className="bg-gradient-to-r from-pink-500 to-purple-600 text-white px-8 py-4 rounded-full font-bold text-lg shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed border-4 border-white hover:scale-105 mb-4"
+                className="bg-gradient-to-r from-pink-500 to-purple-600 text-white px-6 py-3 rounded-xl font-bold text-base shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 mb-4 w-full max-w-xs"
               >
                 {isSpinning ? (
                   <div className="flex items-center gap-3">
