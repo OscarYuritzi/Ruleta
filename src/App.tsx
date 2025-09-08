@@ -122,60 +122,162 @@ function App() {
     const segments = options.length;
     const anglePerSegment = (2 * Math.PI) / segments;
 
+    // Princess color palette - more elegant and bright
+    const princessColors = [
+      '#FF69B4', '#FFB6C1', '#FF1493', '#FFE4E1',
+      '#DDA0DD', '#DA70D6', '#BA55D3', '#9370DB',
+      '#FF6347', '#FFA07A', '#FFD700', '#FFFF00',
+      '#98FB98', '#87CEEB', '#87CEFA', '#B0E0E6',
+      '#F0E68C', '#FFEFD5', '#FFDAB9', '#FFE4B5'
+    ];
     ctx.clearRect(0, 0, rect.width, rect.height);
     ctx.save();
     ctx.translate(centerX, centerY);
     ctx.rotate((rotation * Math.PI) / 180);
 
+    // Draw outer decorative ring
+    ctx.beginPath();
+    ctx.arc(0, 0, radius + 8, 0, 2 * Math.PI);
+    const outerGradient = ctx.createRadialGradient(0, 0, radius - 20, 0, 0, radius + 8);
+    outerGradient.addColorStop(0, '#FFD700');
+    outerGradient.addColorStop(0.7, '#FF69B4');
+    outerGradient.addColorStop(1, '#8A2BE2');
+    ctx.fillStyle = outerGradient;
+    ctx.fill();
     // Draw segments
     options.forEach((option, index) => {
       const startAngle = index * anglePerSegment;
       const endAngle = (index + 1) * anglePerSegment;
+      const color = princessColors[index % princessColors.length];
 
       // Draw segment
       ctx.beginPath();
       ctx.arc(0, 0, radius, startAngle, endAngle);
       ctx.lineTo(0, 0);
-      ctx.fillStyle = option.color;
+      
+      // Create beautiful gradient for each segment
+      const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, radius);
+      gradient.addColorStop(0, '#FFFFFF');
+      gradient.addColorStop(0.3, color);
+      gradient.addColorStop(1, color);
+      ctx.fillStyle = gradient;
       ctx.fill();
+      
+      // Add sparkle effect border
       ctx.strokeStyle = 'white';
-      ctx.lineWidth = 2;
+      ctx.lineWidth = 3;
+      ctx.stroke();
+      
+      // Add inner shadow for depth
+      ctx.beginPath();
+      ctx.arc(0, 0, radius - 5, startAngle, endAngle);
+      ctx.lineTo(0, 0);
+      ctx.strokeStyle = 'rgba(0,0,0,0.1)';
+      ctx.lineWidth = 1;
       ctx.stroke();
 
-      // Draw text (only for normal wheel)
+      // Draw text - ALWAYS show the actual option text
       if (wheelType !== 'mystery') {
         ctx.save();
         ctx.rotate(startAngle + anglePerSegment / 2);
         ctx.textAlign = 'center';
-        ctx.fillStyle = 'white';
-        ctx.font = 'bold 12px Arial';
-        ctx.shadowColor = 'rgba(0,0,0,0.5)';
-        ctx.shadowBlur = 2;
+        
+        // Beautiful text styling
+        const fontSize = Math.max(10, Math.min(16, radius * 0.08));
+        ctx.font = `bold ${fontSize}px 'Dancing Script', cursive`;
+        ctx.fillStyle = '#FFFFFF';
+        ctx.strokeStyle = '#4A0E4E';
+        ctx.lineWidth = 2;
+        ctx.shadowColor = 'rgba(0,0,0,0.7)';
+        ctx.shadowBlur = 3;
+        ctx.shadowOffsetX = 1;
+        ctx.shadowOffsetY = 1;
 
-        const text = option.text.length > 20 ? option.text.substring(0, 20) + '...' : option.text;
-        ctx.fillText(text, radius * 0.7, 5);
+        // Smart text wrapping for better display
+        const text = option.text;
+        const maxLength = radius > 200 ? 25 : radius > 150 ? 20 : 15;
+        
+        if (text.length <= maxLength) {
+          // Single line
+          ctx.strokeText(text, radius * 0.65, 0);
+          ctx.fillText(text, radius * 0.65, 0);
+        } else {
+          // Two lines
+          const words = text.split(' ');
+          const line1 = [];
+          const line2 = [];
+          let currentLength = 0;
+          
+          for (const word of words) {
+            if (currentLength + word.length + 1 <= maxLength / 2) {
+              line1.push(word);
+              currentLength += word.length + 1;
+            } else {
+              line2.push(word);
+            }
+          }
+          
+          const text1 = line1.join(' ');
+          const text2 = line2.join(' ');
+          
+          if (text2.length === 0) {
+            // Fallback: truncate
+            const truncated = text.substring(0, maxLength - 3) + '...';
+            ctx.strokeText(truncated, radius * 0.65, 0);
+            ctx.fillText(truncated, radius * 0.65, 0);
+          } else {
+            // Two lines
+            ctx.strokeText(text1, radius * 0.65, -fontSize/2);
+            ctx.fillText(text1, radius * 0.65, -fontSize/2);
+            ctx.strokeText(text2, radius * 0.65, fontSize/2);
+            ctx.fillText(text2, radius * 0.65, fontSize/2);
+          }
+        }
+        
         ctx.restore();
       } else {
-        // Draw mystery icon
+        // Draw mystery icon with sparkles
         ctx.save();
         ctx.rotate(startAngle + anglePerSegment / 2);
         ctx.textAlign = 'center';
-        ctx.font = '20px Arial';
-        ctx.fillText('🎁', radius * 0.7, 8);
+        const iconSize = Math.max(16, radius * 0.08);
+        ctx.font = `${iconSize}px Arial`;
+        ctx.fillText('🎁✨', radius * 0.65, 8);
         ctx.restore();
       }
     });
 
     ctx.restore();
 
-    // Draw center circle
+    // Draw beautiful center jewel
     ctx.beginPath();
-    ctx.arc(centerX, centerY, 25, 0, 2 * Math.PI);
-    ctx.fillStyle = 'white';
+    ctx.arc(centerX, centerY, 35, 0, 2 * Math.PI);
+    
+    // Center gradient - like a precious gem
+    const centerGradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, 35);
+    centerGradient.addColorStop(0, '#FFFFFF');
+    centerGradient.addColorStop(0.3, '#FFD700');
+    centerGradient.addColorStop(0.7, '#FF69B4');
+    centerGradient.addColorStop(1, '#8A2BE2');
+    ctx.fillStyle = centerGradient;
     ctx.fill();
-    ctx.strokeStyle = '#ff6b9d';
-    ctx.lineWidth = 3;
+    
+    // Multiple decorative borders
+    ctx.strokeStyle = '#FFFFFF';
+    ctx.lineWidth = 4;
     ctx.stroke();
+    
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, 31, 0, 2 * Math.PI);
+    ctx.strokeStyle = '#FFD700';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    
+    // Center crown emoji
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = '24px Arial';
+    ctx.fillText('👑', centerX, centerY);
   };
 
   const spinWheel = () => {
