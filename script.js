@@ -145,8 +145,10 @@ async function connectCouple() {
         // Setup realtime subscription
         await setupRealtimeSubscription();
         
-        // Check for existing partners and notify
-        await checkExistingPartners();
+        // CRITICAL: Wait before checking existing partners to ensure subscription is ready
+        setTimeout(async () => {
+            await checkExistingPartners();
+        }, 1000);
         
         // Hide connection screen and show main app
         coupleConnectionScreen.classList.add('hidden');
@@ -239,12 +241,17 @@ async function setupRealtimeSubscription() {
                 filter: `couple_name=eq.${currentCouple}`
             },
             (payload) => {
-                console.log(`📡 [${currentUser}] Cambio detectado:`, payload.eventType, payload.new?.user_name || payload.old?.user_name);
+                console.log(`📡 [${currentUser}] Evento ${payload.eventType} de ${payload.new?.user_name || payload.old?.user_name}:`, payload);
                 handleRealtimeUpdate(payload);
             }
         )
         .subscribe((status) => {
-            console.log(`📡 [${currentUser}] Estado de suscripción:`, status);
+            console.log(`📡 [${currentUser}] Suscripción ${status} para pareja: ${currentCouple}`);
+            
+            // When subscription is ready, ensure we sync properly
+            if (status === 'SUBSCRIBED') {
+                console.log(`✅ [${currentUser}] Suscripción activa - Ready for realtime sync`);
+            }
         });
     
     console.log(`✅ Suscripción configurada para pareja: ${currentCouple}`);
@@ -261,7 +268,8 @@ async function checkExistingPartners() {
             .from('realtime_sessions')
             .select('*')
             .eq('couple_name', currentCouple)
-            .gte('last_activity', new Date(Date.now() - 5 * 60 * 1000).toISOString());
+            .gte('last_activity', new Date(Date.now() - 10 * 60 * 1000).toISOString()) // Extended to 10 minutes
+            .order('last_activity', { ascending: false });
         
         if (!error && sessions && sessions.length > 0) {
             console.log(`📋 Sesiones encontradas:`, sessions);
@@ -280,17 +288,23 @@ async function checkExistingPartners() {
                 showPartnerConnectionNotification(partnerName, 'already_connected');
             });
             
-            // Force an update to our session to trigger partner notifications
+            // CRITICAL: Force bidirectional sync for all existing partners
             if (currentUserSession && connectedPartners.length > 0) {
+                console.log(`🔄 Forzando sync bidireccional para partners existentes:`, connectedPartners);
                 setTimeout(async () => {
-                    await updateSpinningState(
-                        currentUserSession.id,
-                        false,
-                        0,
-                        null,
-                        []
-                    );
-                }, 1500);
+                    try {
+                        await updateSpinningState(
+                            currentUserSession.id,
+                            false,
+                            0,
+                            currentWheelType || null,
+                            currentOptions || []
+                        );
+                        console.log(`✅ Sync bidireccional completado`);
+                    } catch (error) {
+                        console.error('❌ Error en sync bidireccional:', error);
+                    }
+                }, 1200); // Increased delay for better sync
             }
         } else {
             console.log(`👤 No hay partners conectados aún`);
@@ -397,7 +411,7 @@ function handleRealtimeUpdate(payload) {
         return;
     }
     
-    // Handle partner connection/disconnection
+    // Handle partner connection/disconnection  
     if (eventType === 'INSERT' && newRecord && newRecord.user_name !== currentUser) {
         console.log(`👋 Nuevo partner conectado: ${newRecord.user_name}`);
         if (!connectedPartners.includes(newRecord.user_name)) {
@@ -405,17 +419,24 @@ function handleRealtimeUpdate(payload) {
             updatePartnerStatus();
             showPartnerConnectionNotification(newRecord.user_name, 'joining');
             
-            // Force update our session to trigger bidirectional sync
+            // CRITICAL: Force bidirectional sync by updating our session
+            // This triggers the partner to receive our UPDATE event
             if (currentUserSession) {
+                console.log(`🔄 Forzando actualización bidireccional para ${newRecord.user_name}`);
                 setTimeout(async () => {
-                    await updateSpinningState(
-                        currentUserSession.id,
-                        false,
-                        wheelRotation,
-                        currentWheelType,
-                        currentOptions
-                    );
-                }, 500); // Small delay to ensure partner's session is fully created
+                    try {
+                        await updateSpinningState(
+                            currentUserSession.id,
+                            false,
+                            wheelRotation || 0,
+                            currentWheelType,
+                            currentOptions || []
+                        );
+                        console.log(`✅ Actualización bidireccional enviada`);
+                    } catch (error) {
+                        console.error('❌ Error en actualización bidireccional:', error);
+                    }
+                }, 800); // Increased delay for better reliability
             }
         }
     }
@@ -428,18 +449,28 @@ function handleRealtimeUpdate(payload) {
     }
     
     if (eventType === 'UPDATE' && newRecord) {
-        // Handle partner activity updates - IMPROVED LOGIC
+        // Handle partner activity updates - BIDIRECTIONAL SYNC LOGIC
         if (newRecord.user_name !== currentUser) {
             const partnerName = newRecord.user_name;
             const isPartnerActive = new Date(newRecord.last_activity) > new Date(Date.now() - 5 * 60 * 1000);
             const isInPartnersList = connectedPartners.includes(partnerName);
             
-            console.log(`🔄 Partner ${partnerName} activity update:`, { 
+            console.log(`🔄 Partner ${partnerName} UPDATE event:`, { 
                 isActive: isPartnerActive, 
                 inList: isInPartnersList,
-                lastActivity: newRecord.last_activity 
+                lastActivity: newRecord.last_activity,
+                coupleName: newRecord.couple_name
             });
             
+            // CRITICAL: Add partner if they're active and from our couple
+            if (isPartnerActive && !isInPartnersList && newRecord.couple_name === currentCouple) {
+                console.log(`💕 Agregando partner ${partnerName} por UPDATE event`);
+                connectedPartners.push(partnerName);
+                updatePartnerStatus();
+                showPartnerConnectionNotification(partnerName, 'joining');
+            }
+            
+            // Remove inactive partners
             if (isPartnerActive && !isInPartnersList) {
                 connectedPartners.push(partnerName);
                 updatePartnerStatus();
