@@ -121,8 +121,6 @@ class RomanticRoulette {
         document.getElementById('wheel-selection').classList.add('hidden');
         document.getElementById('wheel-creator').classList.remove('hidden');
         
-        this.initCanvas();
-        
         const title = document.getElementById('creator-title');
         
         switch (type) {
@@ -138,6 +136,7 @@ class RomanticRoulette {
                 break;
         }
         
+        this.initCanvas();
         this.updateDisplay();
     }
 
@@ -237,218 +236,173 @@ class RomanticRoulette {
         const segments = this.options.length;
         const anglePerSegment = (2 * Math.PI) / segments;
         
-        // Colors: predominantly white with fuchsia and black accents
-        const colors = ['#ffffff', '#e30052']; // White primary, fuchsia secondary
+        // Princess color palette - elegant and bright
+        const princessColors = [
+            '#FF69B4', '#FFB6C1', '#FF1493', '#FFE4E1',
+            '#DDA0DD', '#DA70D6', '#BA55D3', '#9370DB',
+            '#FF6347', '#FFA07A', '#FFD700', '#FFFF00',
+            '#98FB98', '#87CEEB', '#87CEFA', '#B0E0E6',
+            '#F0E68C', '#FFEFD5', '#FFDAB9', '#FFE4B5'
+        ];
         
         this.ctx.clearRect(0, 0, 600, 600);
         this.ctx.save();
         this.ctx.translate(centerX, centerY);
         this.ctx.rotate(this.rotation * Math.PI / 180);
         
-        // Draw segments
-        for (let i = 0; i < segments; i++) {
-            const startAngle = i * anglePerSegment;
-            const endAngle = (i + 1) * anglePerSegment;
-            const color = colors[i % colors.length];
-            
-            // Draw segment
-            this.ctx.beginPath();
-            this.ctx.arc(0, 0, radius, startAngle, endAngle);
-            this.ctx.lineTo(0, 0);
-            
-            this.ctx.fillStyle = color;
-            this.ctx.fill();
-            
-            // Black border for definition
-            this.ctx.strokeStyle = '#000000';
-            this.ctx.lineWidth = 2;
-            this.ctx.stroke();
-
-            // Draw text
-            this.ctx.save();
-            this.ctx.rotate(startAngle + anglePerSegment / 2);
-            this.ctx.textAlign = 'center';
-            this.ctx.textBaseline = 'middle';
-            
-            // Text size based on segments
-            const fontSize = segments > 12 ? 12 : segments > 8 ? 14 : 16;
-            this.ctx.font = `bold ${fontSize}px Arial`;
-            
-            // Text position - well within segment
-            const textRadius = radius * 0.65;
-            
-            // High contrast text colors
-            const isWhiteSegment = i % 2 === 0;
-            this.ctx.fillStyle = isWhiteSegment ? '#000000' : '#ffffff'; // Black on white, white on fuchsia
-            this.ctx.strokeStyle = isWhiteSegment ? '#ffffff' : '#000000';
-            this.ctx.lineWidth = 1;
-
-            let displayText;
-            if (this.wheelType === 'mystery') {
-                displayText = '🎁';
-            } else {
-                displayText = this.options[i];
-            }
-            
-            // Handle text length
-            const maxLength = segments > 10 ? 15 : segments > 6 ? 20 : 30;
-            
-            if (displayText.length <= maxLength) {
-                this.ctx.strokeText(displayText, textRadius, 0);
-                this.ctx.fillText(displayText, textRadius, 0);
-            } else {
-                // Split text into two lines
-                const words = displayText.split(' ');
-                let line1 = words[0] || '';
-                let line2 = words.slice(1).join(' ');
-                
-                if (line1.length > maxLength / 2) {
-                    line1 = line1.substring(0, maxLength / 2 - 2) + '..';
-                }
-                if (line2.length > maxLength / 2) {
-                    line2 = line2.substring(0, maxLength / 2 - 2) + '..';
-                }
-                
-                this.ctx.strokeText(line1, textRadius, -fontSize * 0.5);
-                this.ctx.fillText(line1, textRadius, -fontSize * 0.5);
-                this.ctx.strokeText(line2, textRadius, fontSize * 0.5);
-                this.ctx.fillText(line2, textRadius, fontSize * 0.5);
-            }
-            
-            this.ctx.restore();
-        }
-
-        this.ctx.restore();
-
-        // Draw center circle - white with fuchsia accent
+        // Draw outer decorative ring
         this.ctx.beginPath();
-        this.ctx.arc(centerX, centerY, 45, 0, 2 * Math.PI);
-        this.ctx.fillStyle = '#ffffff'; // White center
+        this.ctx.arc(0, 0, radius + 15, 0, 2 * Math.PI);
+        const outerGradient = this.ctx.createRadialGradient(0, 0, radius - 30, 0, 0, radius + 15);
+        outerGradient.addColorStop(0, '#FFD700');
+        outerGradient.addColorStop(0.7, '#FF69B4');
+        outerGradient.addColorStop(1, '#8A2BE2');
+        this.ctx.fillStyle = outerGradient;
         this.ctx.fill();
         
-        this.ctx.strokeStyle = '#e30052'; // Fuchsia border
-        this.ctx.lineWidth = 4;
-        this.ctx.stroke();
-        
-        // Center heart emoji
-        this.ctx.textAlign = 'center';
-        this.ctx.textBaseline = 'middle';
-        this.ctx.font = '28px Arial';
-        this.ctx.fillStyle = '#e30052'; // Fuchsia heart
-        this.ctx.fillText('💕', centerX, centerY);
-    }
-        }
-        // Fuchsia color scheme - only 3 colors
-        const fuchsiaColors = ['#e30052', '#ffffff']; // Alternate between fuchsia and white
-        
-        this.ctx.clearRect(0, 0, 600, 600);
-        this.ctx.save();
-        this.ctx.translate(centerX, centerY);
-        this.ctx.rotate(this.rotation * Math.PI / 180);
-        
-        // Draw segments with consistent fuchsia design
+        // Draw segments with princess style
         for (let i = 0; i < segments; i++) {
             const startAngle = i * anglePerSegment;
             const endAngle = (i + 1) * anglePerSegment;
-            const color = fuchsiaColors[i % fuchsiaColors.length];
+            const color = princessColors[i % princessColors.length];
+            
+            // Highlight current segment during spin
+            const isHighlighted = this.currentHighlight === i;
             
             // Draw segment with gradient
             this.ctx.beginPath();
             this.ctx.arc(0, 0, radius, startAngle, endAngle);
             this.ctx.lineTo(0, 0);
             
-            this.ctx.fillStyle = color;
+            // Create beautiful gradient for each segment
+            const segmentGradient = this.ctx.createRadialGradient(0, 0, 0, 0, 0, radius);
+            if (isHighlighted) {
+                segmentGradient.addColorStop(0, '#FFFF00');
+                segmentGradient.addColorStop(0.3, '#FFD700');
+                segmentGradient.addColorStop(1, color);
+            } else {
+                segmentGradient.addColorStop(0, '#FFFFFF');
+                segmentGradient.addColorStop(0.3, color);
+            }
+            segmentGradient.addColorStop(1, color);
+            this.ctx.fillStyle = segmentGradient;
             this.ctx.fill();
             
-            // Add black border
-            this.ctx.strokeStyle = '#000000';
-            this.ctx.lineWidth = 3;
+            // Add sparkle effect border
+            this.ctx.strokeStyle = 'white';
+            this.ctx.lineWidth = 4;
+            this.ctx.stroke();
+            
+            // Add inner shadow for depth
+            this.ctx.beginPath();
+            this.ctx.arc(0, 0, radius - 8, startAngle, endAngle);
+            this.ctx.lineTo(0, 0);
+            this.ctx.strokeStyle = 'rgba(0,0,0,0.1)';
+            this.ctx.lineWidth = 2;
             this.ctx.stroke();
 
-            // Draw text for ALL wheel types with proper positioning
-            this.ctx.save();
-            this.ctx.rotate(startAngle + anglePerSegment / 2);
-            this.ctx.textAlign = 'center';
-            this.ctx.textBaseline = 'middle';
-            
-            // Calculate proper text size and position
-            const maxFontSize = Math.min(16, radius * 0.08);
-            const minFontSize = Math.max(10, radius * 0.04);
-            const fontSize = segments > 12 ? minFontSize : segments > 8 ? maxFontSize * 0.8 : maxFontSize;
-            this.ctx.font = `bold ${fontSize}px Arial`;
-            
-            // Position text safely within segment boundaries
-            const textRadius = radius * 0.65; // Keep text well within bounds
-            
-            // Use high contrast colors
-            const isFuchsiaSegment = i % 2 === 0;
-            this.ctx.fillStyle = isFuchsiaSegment ? '#ffffff' : '#000000';
-            this.ctx.strokeStyle = isFuchsiaSegment ? '#000000' : '#ffffff';
-            this.ctx.lineWidth = 2;
-
-            let displayText;
-            if (this.wheelType === 'mystery') {
-                displayText = '🎁';
-            } else {
-                displayText = this.options[i];
-            }
-            
-            // Smart text wrapping to prevent overflow
-            const maxLength = segments > 10 ? 12 : segments > 6 ? 18 : 25;
-            
-            if (displayText.length <= maxLength) {
-                // Single line
-                this.ctx.strokeText(displayText, textRadius, 0);
-                this.ctx.fillText(displayText, textRadius, 0);
-            } else {
-                // Split into two lines
-                const words = displayText.split(' ');
-                let line1 = '';
-                let line2 = '';
+            // Draw text - Show actual options
+            if (this.wheelType !== 'mystery') {
+                this.ctx.save();
+                this.ctx.rotate(startAngle + anglePerSegment / 2);
+                this.ctx.textAlign = 'center';
                 
-                for (let j = 0; j < words.length; j++) {
-                    if (line1.length + words[j].length + 1 <= maxLength / 2) {
-                        line1 += (line1 ? ' ' : '') + words[j];
+                // Beautiful text styling
+                const fontSize = Math.max(14, Math.min(20, radius * 0.06));
+                this.ctx.font = `bold ${fontSize}px 'Dancing Script', cursive`;
+                this.ctx.fillStyle = '#FFFFFF';
+                this.ctx.strokeStyle = '#4A0E4E';
+                this.ctx.lineWidth = 3;
+                this.ctx.shadowColor = 'rgba(0,0,0,0.8)';
+                this.ctx.shadowBlur = 4;
+                this.ctx.shadowOffsetX = 2;
+                this.ctx.shadowOffsetY = 2;
+
+                // Smart text display
+                const text = this.options[i];
+                const maxLength = radius > 200 ? 35 : radius > 150 ? 28 : 20;
+                
+                if (text.length <= maxLength) {
+                    // Single line
+                    this.ctx.strokeText(text, radius * 0.65, 0);
+                    this.ctx.fillText(text, radius * 0.65, 0);
+                } else {
+                    // Two lines
+                    const words = text.split(' ');
+                    const line1 = [];
+                    const line2 = [];
+                    let currentLength = 0;
+                    
+                    for (const word of words) {
+                        if (currentLength + word.length + 1 <= maxLength / 2 && line1.length < 3) {
+                            line1.push(word);
+                            currentLength += word.length + 1;
+                        } else {
+                            line2.push(word);
+                        }
+                    }
+                    
+                    const text1 = line1.join(' ');
+                    const text2 = line2.join(' ').substring(0, maxLength / 2);
+                    
+                    if (text2.length === 0) {
+                        // Fallback: truncate
+                        const truncated = text.substring(0, maxLength - 3) + '...';
+                        this.ctx.strokeText(truncated, radius * 0.65, 0);
+                        this.ctx.fillText(truncated, radius * 0.65, 0);
                     } else {
-                        line2 += (line2 ? ' ' : '') + words[j];
+                        // Two lines
+                        this.ctx.strokeText(text1, radius * 0.65, -fontSize/2);
+                        this.ctx.fillText(text1, radius * 0.65, -fontSize/2);
+                        this.ctx.strokeText(text2, radius * 0.65, fontSize/2);
+                        this.ctx.fillText(text2, radius * 0.65, fontSize/2);
                     }
                 }
                 
-                if (line2.length > maxLength / 2) {
-                    line2 = line2.substring(0, maxLength / 2 - 2) + '..';
-                }
-                
-                // Draw two lines
+                this.ctx.restore();
+            } else {
+                // Draw mystery icon with sparkles
                 this.ctx.save();
-                this.ctx.strokeText(line1, textRadius, -fontSize * 0.6);
-                this.ctx.fillText(line1, textRadius, -fontSize * 0.6);
-                this.ctx.strokeText(line2, textRadius, fontSize * 0.6);
-                this.ctx.fillText(line2, textRadius, fontSize * 0.6);
+                this.ctx.rotate(startAngle + anglePerSegment / 2);
+                this.ctx.textAlign = 'center';
+                const iconSize = Math.max(24, radius * 0.08);
+                this.ctx.font = `${iconSize}px Arial`;
+                this.ctx.fillText('🎁✨', radius * 0.65, 10);
                 this.ctx.restore();
             }
-            
-            this.ctx.restore();
         }
 
         this.ctx.restore();
 
-        // Draw center circle with fuchsia scheme
+        // Draw beautiful center jewel
         this.ctx.beginPath();
         this.ctx.arc(centerX, centerY, 45, 0, 2 * Math.PI);
-        this.ctx.fillStyle = '#e30052';
+        
+        // Center gradient - like a precious gem
+        const centerGradient = this.ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, 45);
+        centerGradient.addColorStop(0, '#FFFFFF');
+        centerGradient.addColorStop(0.3, '#FFD700');
+        centerGradient.addColorStop(0.7, '#FF69B4');
+        centerGradient.addColorStop(1, '#8A2BE2');
+        this.ctx.fillStyle = centerGradient;
         this.ctx.fill();
         
-        // Border
-        this.ctx.strokeStyle = '#000000';
-        this.ctx.lineWidth = 4;
+        // Multiple decorative borders
+        this.ctx.strokeStyle = '#FFFFFF';
+        this.ctx.lineWidth = 6;
         this.ctx.stroke();
         
-        // Center heart emoji
+        this.ctx.beginPath();
+        this.ctx.arc(centerX, centerY, 38, 0, 2 * Math.PI);
+        this.ctx.strokeStyle = '#FFD700';
+        this.ctx.lineWidth = 3;
+        this.ctx.stroke();
+        
+        // Center crown emoji
         this.ctx.textAlign = 'center';
         this.ctx.textBaseline = 'middle';
-        this.ctx.font = '28px Arial';
-        this.ctx.fillStyle = '#ffffff';
-        this.ctx.fillText('💕', centerX, centerY);
+        this.ctx.font = '32px Arial';
+        this.ctx.fillText('👑', centerX, centerY);
     }
 
     drawEmptyWheel() {
@@ -460,34 +414,36 @@ class RomanticRoulette {
         
         this.ctx.clearRect(0, 0, 600, 600);
         
-        // Draw empty circle - white with fuchsia accent
+        // Draw empty circle with princess gradient
         this.ctx.beginPath();
         this.ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
-        this.ctx.fillStyle = '#ffffff';
+        const emptyGradient = this.ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius);
+        emptyGradient.addColorStop(0, '#FFFFFF');
+        emptyGradient.addColorStop(0.5, '#FFB6C1');
+        emptyGradient.addColorStop(1, '#FF69B4');
+        this.ctx.fillStyle = emptyGradient;
         this.ctx.fill();
-        this.ctx.strokeStyle = '#e30052';
-        this.ctx.lineWidth = 3;
+        this.ctx.strokeStyle = '#FF1493';
+        this.ctx.lineWidth = 6;
         this.ctx.stroke();
         
         // Draw message
-        this.ctx.fillStyle = '#000000';
-        this.ctx.font = 'bold 18px Arial';
+        this.ctx.fillStyle = '#8A2BE2';
+        this.ctx.font = 'bold 24px Dancing Script';
         this.ctx.textAlign = 'center';
-        this.ctx.textBaseline = 'middle';
         this.ctx.fillText('Agrega opciones', centerX, centerY - 10);
-        this.ctx.fillText('románticas 💕', centerX, centerY + 15);
+        this.ctx.fillText('románticas 💕', centerX, centerY + 20);
         
-        // Draw center - white with fuchsia border
+        // Draw center jewel
         this.ctx.beginPath();
         this.ctx.arc(centerX, centerY, 45, 0, 2 * Math.PI);
-        this.ctx.fillStyle = '#ffffff';
+        this.ctx.fillStyle = '#FFD700';
         this.ctx.fill();
-        this.ctx.strokeStyle = '#e30052';
-        this.ctx.lineWidth = 3;
+        this.ctx.strokeStyle = '#FFFFFF';
+        this.ctx.lineWidth = 4;
         this.ctx.stroke();
-        this.ctx.font = '28px Arial';
-        this.ctx.fillStyle = '#e30052';
-        this.ctx.fillText('💕', centerX, centerY);
+        this.ctx.font = '32px Arial';
+        this.ctx.fillText('👑', centerX, centerY);
     }
 
     spinWheel() {
@@ -512,9 +468,9 @@ class RomanticRoulette {
         const randomSegment = Math.floor(Math.random() * segments);
         const finalRotation = 360 * randomSpins + (360 - randomSegment * segmentAngle - segmentAngle / 2);
         
-        // Smooth animation with gradual deceleration
+        // Smooth animation
         const startTime = Date.now();
-        const duration = 4000; // Optimal duration for smooth deceleration
+        const duration = 5500; // Much slower for suspense
         const startRotation = this.rotation;
         
         let lastSegment = -1;
@@ -523,10 +479,10 @@ class RomanticRoulette {
             const elapsed = Date.now() - startTime;
             const progress = Math.min(elapsed / duration, 1);
             
-            // Smooth cubic-bezier easing for gradual deceleration
-            const easeOut = progress < 0.5 
-                ? 2 * progress * progress 
-                : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+            // Advanced easing with dramatic slowdown
+            const easeOut = progress < 0.7 ? 
+                Math.pow(progress / 0.7, 2) * 0.95 : 
+                0.95 + (1 - 0.95) * Math.pow((progress - 0.7) / 0.3, 4);
             
             this.rotation = startRotation + (finalRotation - startRotation) * easeOut;
             this.drawWheel();
@@ -535,6 +491,7 @@ class RomanticRoulette {
             const currentSegment = Math.floor(((360 - (this.rotation % 360)) / segmentAngle)) % segments;
             if (currentSegment !== lastSegment && progress > 0.1 && progress < 0.95) {
                 this.playTickSound();
+                this.highlightCurrentSegment(currentSegment);
                 lastSegment = currentSegment;
             }
             
