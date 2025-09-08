@@ -193,6 +193,11 @@ class RomanticRoulette {
                 const index = this.activeSessions.findIndex(s => s.id === newRecord.id);
                 if (index > -1) {
                     this.activeSessions[index] = newRecord;
+                    
+                    // Sync wheel rotation and state from other users
+                    if (newRecord.id !== this.currentSession?.id) {
+                        this.syncRemoteWheelState(newRecord);
+                    }
                 }
                 break;
             case 'DELETE':
@@ -201,6 +206,56 @@ class RomanticRoulette {
         }
         
         this.updateActiveSessionsDisplay();
+    }
+
+    syncRemoteWheelState(remoteSession) {
+        // Only sync if we're on the same wheel type or if we don't have a wheel active
+        if (!this.wheelType || this.wheelType === remoteSession.wheel_type) {
+            // If someone else is spinning and we're on the same screen
+            if (remoteSession.is_spinning && document.getElementById('wheel-canvas') && !this.isSpinning) {
+                // Sync their wheel type and options
+                if (remoteSession.wheel_type && remoteSession.current_options?.length > 0) {
+                    const wasOnSameType = this.wheelType === remoteSession.wheel_type;
+                    
+                    if (!wasOnSameType) {
+                        // Switch to their wheel type
+                        this.selectWheelType(remoteSession.wheel_type);
+                    }
+                    
+                    this.options = remoteSession.current_options;
+                    this.updateDisplay();
+                    
+                    // Animate rotation to match theirs (with slight delay for realism)
+                    this.animateToRotation(remoteSession.wheel_rotation);
+                }
+            }
+        }
+    }
+
+    animateToRotation(targetRotation) {
+        if (!this.canvas || this.isSpinning) return;
+        
+        const startRotation = this.rotation;
+        const rotationDiff = targetRotation - startRotation;
+        const startTime = Date.now();
+        const duration = 800; // Smooth 0.8 second sync
+        
+        const animate = () => {
+            const elapsed = Date.now() - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            
+            // Smooth easing
+            const easeOut = 1 - Math.pow(1 - progress, 3);
+            
+            this.rotation = startRotation + (rotationDiff * easeOut);
+            this.drawWheel();
+            
+            if (progress < 1) {
+                requestAnimationFrame(animate);
+            }
+        };
+        
+        animate();
     }
 
     updateActiveSessionsDisplay() {
@@ -212,18 +267,32 @@ class RomanticRoulette {
             activeUsersPanel.id = 'active-users-panel';
             activeUsersPanel.style.cssText = `
                 position: fixed;
-                top: 120px;
-                right: 20px;
-                background: rgba(0, 0, 0, 0.95);
+                bottom: 20px;
+                left: 20px;
+                background: rgba(0, 0, 0, 0.8);
                 backdrop-filter: blur(10px);
-                border: 2px solid #e30070;
+                border: 1px solid #e30070;
                 border-radius: 15px;
-                padding: 15px;
-                max-width: 250px;
+                padding: 10px 15px;
+                max-width: 200px;
                 z-index: 1000;
-                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+                box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
                 color: white;
+                transition: all 0.3s ease;
+                opacity: 0.8;
             `;
+            
+            // Hover effect for better visibility when needed
+            activeUsersPanel.addEventListener('mouseenter', () => {
+                activeUsersPanel.style.opacity = '1';
+                activeUsersPanel.style.transform = 'scale(1.05)';
+            });
+            
+            activeUsersPanel.addEventListener('mouseleave', () => {
+                activeUsersPanel.style.opacity = '0.8';
+                activeUsersPanel.style.transform = 'scale(1)';
+            });
+            
             document.body.appendChild(activeUsersPanel);
         }
 
@@ -243,7 +312,7 @@ class RomanticRoulette {
 
         activeUsersPanel.style.display = 'block';
         
-        let html = '<div style="font-weight: 600; color: #e30070; margin-bottom: 10px; text-align: center;">👥 Usuarios Activos</div>';
+        let html = '<div style="font-weight: 600; color: #e30070; margin-bottom: 8px; text-align: center; font-size: 0.9rem;">👥 En línea</div>';
         
         recentSessions.forEach(session => {
             const isSpinning = session.is_spinning;
@@ -253,22 +322,21 @@ class RomanticRoulette {
                 <div style="
                     display: flex; 
                     align-items: center; 
-                    padding: 5px 0; 
-                    border-bottom: 1px solid rgba(227, 0, 112, 0.2);
-                    ${isCurrentUser ? 'background: rgba(227, 0, 112, 0.1); border-radius: 8px; padding: 8px;' : ''}
+                    padding: 3px 0; 
+                    ${isCurrentUser ? 'background: rgba(227, 0, 112, 0.1); border-radius: 5px; padding: 5px;' : ''}
                 ">
                     <div style="
-                        width: 12px; 
-                        height: 12px; 
+                        width: 8px; 
+                        height: 8px; 
                         border-radius: 50%; 
                         background: ${isSpinning ? '#00ff00' : '#e30070'}; 
-                        margin-right: 8px;
+                        margin-right: 6px;
                         ${isSpinning ? 'animation: pulse 1s infinite;' : ''}
                     "></div>
-                    <span style="flex: 1; font-size: 0.9rem;">
+                    <span style="flex: 1; font-size: 0.8rem;">
                         ${session.user_name}${isCurrentUser ? ' (tú)' : ''}
                     </span>
-                    ${isSpinning ? '<span style="font-size: 0.8rem; color: #00ff00;">🎯 Girando</span>' : ''}
+                    ${isSpinning ? '<span style="font-size: 0.7rem; color: #00ff00;">🎯</span>' : ''}
                 </div>
             `;
         });
@@ -285,7 +353,8 @@ class RomanticRoulette {
                     this.isSpinning,
                     this.rotation,
                     this.wheelType,
-                    this.options
+                    this.options,
+                    null
                 );
             } catch (error) {
                 console.error('Error keeping session alive:', error);
@@ -794,6 +863,13 @@ class RomanticRoulette {
     }
 
     async notifySpinEnd() {
+        // Get the final result before notifying
+        const segments = this.options.length;
+        const segmentAngle = 360 / segments;
+        const normalizedRotation = ((360 - (this.rotation % 360)) + 360) % 360;
+        const resultIndex = Math.floor(normalizedRotation / segmentAngle) % segments;
+        const result = this.options[resultIndex];
+        
         if (this.currentSession) {
             try {
                 const { updateSpinningState } = await import('./src/supabase.js');
@@ -802,7 +878,8 @@ class RomanticRoulette {
                     false,
                     this.rotation,
                     this.wheelType,
-                    this.options
+                    this.options,
+                    result
                 );
             } catch (error) {
                 console.error('Error notifying spin end:', error);

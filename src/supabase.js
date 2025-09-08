@@ -46,17 +46,24 @@ export async function getUserSession(userName) {
 }
 
 // Función para actualizar estado de giro
-export async function updateSpinningState(sessionId, isSpinning, wheelRotation = 0, wheelType = null, options = []) {
+export async function updateSpinningState(sessionId, isSpinning, wheelRotation = 0, wheelType = null, options = [], result = null) {
   try {
+    const updateData = {
+      is_spinning: isSpinning,
+      wheel_rotation: wheelRotation,
+      wheel_type: wheelType,
+      current_options: options,
+      last_activity: new Date().toISOString()
+    };
+    
+    // Only add result if provided (when spinning ends)
+    if (result !== null) {
+      updateData.last_result = result;
+    }
+    
     const { data, error } = await supabase
       .from('realtime_sessions')
-      .update({
-        is_spinning: isSpinning,
-        wheel_rotation: wheelRotation,
-        wheel_type: wheelType,
-        current_options: options,
-        last_activity: new Date().toISOString()
-      })
+      .update(updateData)
       .eq('id', sessionId)
       .select()
       .single()
