@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ruletas del Amor - Para Parejas a Distancia 💕</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Dancing+Script:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Particles Background -->
+    <div id="particles"></div>
+    
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <h1 class="logo">
+                <span class="snoopy">🐶</span>
+                Ruletas del Amor
+                <span class="hearts">💕✨</span>
+            </h1>
+            <p class="subtitle">Conexión romántica a través de la distancia 🌟</p>
+        </div>
+    </header>
+
+    <!-- Main Navigation -->
+    <main class="main-container">
+        <div class="container">
+            <!-- Wheel Type Selection -->
+            <section id="wheel-selection" class="wheel-selection">
+                <h2>Elige tu Aventura Romántica 😍💗</h2>
+                <div class="wheel-cards">
+                    <div class="wheel-card" data-type="mystery">
+                        <div class="card-icon">🎁</div>
+                        <h3>Ruleta Misteriosa</h3>
+                        <p>Sorpresas ocultas que solo se revelan al girar 🤩</p>
+                        <div class="card-emoji">❤️‍🔥💎🎆</div>
+                    </div>
+                    <div class="wheel-card" data-type="normal">
+                        <div class="card-icon">🎀</div>
+                        <h3>Ruleta Normal</h3>
+                        <p>Crea tu ruleta personalizada con opciones visibles 💓</p>
+                        <div class="card-emoji">🌟✨🎉</div>
+                    </div>
+                    <div class="wheel-card" data-type="surprise">
+                        <div class="card-icon">💗</div>
+                        <h3>Ruleta Sorpresa</h3>
+                        <p>Contenido romántico predefinido para parejas 🫶🏽</p>
+                        <div class="card-emoji">🎇💕❤️</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Wheel Creator -->
+            <section id="wheel-creator" class="wheel-creator hidden">
+                <div class="creator-header">
+                    <button class="back-btn">← Volver</button>
+                    <h2 id="creator-title">Crear Ruleta</h2>
+                </div>
+                
+                <div class="creator-content">
+                    <div class="options-panel">
+                        <h3>Agregar Opciones 💕</h3>
+                        <div class="input-group">
+                            <input type="text" id="option-input" placeholder="Escribe una opción romántica... 😍">
+                            <button id="add-option" class="add-btn">Agregar ✨</button>
+                        </div>
+                        <div id="options-list" class="options-list"></div>
+                        <div class="creator-actions">
+                            <button id="clear-options" class="clear-btn">Limpiar Todo 🗑️</button>
+                            <button id="save-wheel" class="save-btn">Guardar Ruleta 💾</button>
+                        </div>
+                    </div>
+                    
+                    <div class="wheel-panel">
+                        <div class="wheel-container">
+                            <canvas id="wheel-canvas" width="300" height="300"></canvas>
+                            <div class="wheel-center">
+                                <button id="spin-btn" class="spin-button">
+                                    GIRAR 💕
+                                </button>
+                            </div>
+                            <div class="wheel-pointer">📍</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Saved Wheels -->
+            <section id="saved-wheels" class="saved-wheels">
+                <h3>Tus Ruletas Guardadas 💎</h3>
+                <div id="wheels-grid" class="wheels-grid"></div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Result Modal -->
+    <div id="result-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="result-header">
+                <h2>¡Resultado! 🎉</h2>
+            </div>
+            <div class="result-body">
+                <div class="result-icon">🎁</div>
+                <div id="result-text" class="result-text"></div>
+                <div class="result-emojis">💕✨🌟💗</div>
+            </div>
+            <div class="result-footer">
+                <button id="spin-again" class="spin-again-btn">Girar de Nuevo 💫</button>
+                <button id="close-result" class="close-btn">Cerrar ❤️</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

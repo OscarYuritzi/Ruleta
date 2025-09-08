@@ -1,0 +1,75 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom animations for romantic effects */
+@keyframes float {
+  0%, 100% { 
+    transform: translateY(100vh) rotate(0deg); 
+    opacity: 0; 
+  }
+  10% { 
+    opacity: 1; 
+  }
+  90% { 
+    opacity: 1; 
+  }
+  100% { 
+    transform: translateY(-100px) rotate(360deg); 
+    opacity: 0; 
+  }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+  font-size: 1.5rem;
+  position: absolute;
+  pointer-events: none;
+}
+
+/* Smooth transitions for wheel spinning */
+.transition-transform {
+  transition-property: transform;
+}
+
+.duration-3000 {
+  transition-duration: 3000ms;
+}
+
+.ease-out {
+  transition-timing-function: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* Responsive canvas sizing */
+canvas {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+/* Touch-friendly button sizing for mobile */
+@media (max-width: 640px) {
+  button {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* Improved scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(255, 182, 206, 0.2);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(45deg, #ff6b9d, #c44569);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(45deg, #c44569, #ff6b9d);
+}
