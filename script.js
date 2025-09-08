@@ -53,6 +53,14 @@ class RomanticRoulette {
             ]
         };
         
+        // Stickers/emojis para la ruleta sorpresa (solo se muestran estos)
+        this.surpriseStickers = [
+            "💕", "💖", "💗", "💝", "💘", "💓", "💞", "💜",
+            "🌟", "✨", "🎁", "🌹", "🦋", "🌈", "💎", "👑",
+            "🍓", "🎈", "🎀", "🌸", "🌺", "🎉", "🎊", "🎆",
+            "🌙", "⭐", "💐", "🎯", "🍰", "🧸", "💌", "🎵"
+        ];
+        
         this.init();
     }
 
@@ -124,16 +132,20 @@ class RomanticRoulette {
         this.initCanvas();
         
         const title = document.getElementById('creator-title');
+        const optionsPanel = document.getElementById('options-panel');
         
         switch (type) {
             case 'mystery':
                 title.textContent = 'Ruleta Misteriosa 🎁✨';
+                optionsPanel.style.display = 'block';
                 break;
             case 'normal':
                 title.textContent = 'Ruleta Normal 🎀💕';
+                optionsPanel.style.display = 'block';
                 break;
             case 'surprise':
                 title.textContent = 'Ruleta Sorpresa 💗🌟';
+                optionsPanel.style.display = 'none'; // Ocultar panel de opciones
                 this.loadSurpriseContent();
                 break;
         }
@@ -162,8 +174,8 @@ class RomanticRoulette {
         
         // Set actual canvas size for crisp rendering
         const scale = window.devicePixelRatio || 1;
-        this.canvas.width = 600 * scale;
-        this.canvas.height = 600 * scale;
+        this.canvas.width = 800 * scale;
+        this.canvas.height = 800 * scale;
         this.ctx.scale(scale, scale);
         
         this.drawWheel();
@@ -242,9 +254,9 @@ class RomanticRoulette {
             return;
         }
         
-        const centerX = 300;
-        const centerY = 300;
-        const radius = 250;
+        const centerX = 400; // Increased for bigger canvas
+        const centerY = 400;
+        const radius = 350; // Much bigger radius
         const segments = this.options.length;
         const anglePerSegment = (2 * Math.PI) / segments;
         
@@ -253,7 +265,7 @@ class RomanticRoulette {
         
         this.ctx.clearRect(0, 0, 600, 600);
         this.ctx.save();
-        this.ctx.translate(centerX, centerY);
+        this.ctx.clearRect(0, 0, 800, 800);
         this.ctx.rotate(this.rotation * Math.PI / 180);
         
         // Draw segments
@@ -282,11 +294,11 @@ class RomanticRoulette {
             this.ctx.textBaseline = 'middle';
             
             // Text size based on segments
-            const fontSize = segments > 12 ? 12 : segments > 8 ? 14 : 16;
+            const fontSize = segments > 12 ? 16 : segments > 8 ? 18 : 20;
             this.ctx.font = `bold ${fontSize}px 'Poppins', Arial, sans-serif`;
             
             // Text position - well within segment
-            const textRadius = radius * 0.65;
+            const textRadius = radius * 0.7;
             
             // Texto con alto contraste
             this.ctx.fillStyle = '#1a1a1a';
@@ -296,10 +308,18 @@ class RomanticRoulette {
             let displayText;
             if (this.wheelType === 'mystery') {
                 displayText = '🎁';
+            } else if (this.wheelType === 'surprise') {
+                // Solo mostrar stickers/emojis, NO el texto real
+                displayText = this.surpriseStickers[i % this.surpriseStickers.length];
             } else {
                 displayText = this.options[i];
             }
             
+            // Para la ruleta sorpresa, solo mostrar el emoji grande
+            if (this.wheelType === 'surprise') {
+                this.ctx.font = `${fontSize + 8}px Arial`; // Emojis más grandes
+                this.ctx.fillText(displayText, textRadius, 0);
+            } else {
             // Handle text length
             const maxLength = segments > 10 ? 15 : segments > 6 ? 20 : 30;
             
@@ -333,6 +353,7 @@ class RomanticRoulette {
                 this.ctx.strokeText(line2, textRadius, fontSize * 0.5);
                 this.ctx.fillText(line2, textRadius, fontSize * 0.5);
             }
+            }
             
             this.ctx.restore();
         }
@@ -340,8 +361,9 @@ class RomanticRoulette {
         this.ctx.restore();
 
         // Draw beautiful center circle with gradient
+        const centerRadius = 60; // Bigger center for bigger canvas
         this.ctx.beginPath();
-        this.ctx.arc(centerX, centerY, 45, 0, 2 * Math.PI);
+        this.ctx.arc(centerX, centerY, centerRadius, 0, 2 * Math.PI);
         this.ctx.fillStyle = '#ffffff';
         this.ctx.fill();
         
@@ -352,7 +374,7 @@ class RomanticRoulette {
         // Center heart with glow effect
         this.ctx.textAlign = 'center';
         this.ctx.textBaseline = 'middle';
-        this.ctx.font = 'bold 28px Arial';
+        this.ctx.font = 'bold 36px Arial'; // Bigger heart
         this.ctx.fillStyle = '#e30052';
         this.ctx.strokeStyle = '#e30052';
         this.ctx.fillText('💕', centerX, centerY);
@@ -361,11 +383,11 @@ class RomanticRoulette {
     drawEmptyWheel() {
         if (!this.ctx) return;
         
-        const centerX = 300;
-        const centerY = 300;
-        const radius = 250;
+        const centerX = 400;
+        const centerY = 400;
+        const radius = 350;
         
-        this.ctx.clearRect(0, 0, 600, 600);
+        this.ctx.clearRect(0, 0, 800, 800);
         
         // Draw empty circle
         this.ctx.beginPath();
@@ -378,21 +400,22 @@ class RomanticRoulette {
         
         // Draw message
         this.ctx.fillStyle = '#1a1a1a';
-        this.ctx.font = 'bold 20px "Poppins", Arial, sans-serif';
+        this.ctx.font = 'bold 26px "Poppins", Arial, sans-serif'; // Bigger text
         this.ctx.textAlign = 'center';
         this.ctx.textBaseline = 'middle';
         this.ctx.fillText('Agrega opciones', centerX, centerY - 10);
         this.ctx.fillText('románticas 💕', centerX, centerY + 15);
         
         // Draw center
+        const centerRadius = 60;
         this.ctx.beginPath();
-        this.ctx.arc(centerX, centerY, 45, 0, 2 * Math.PI);
+        this.ctx.arc(centerX, centerY, centerRadius, 0, 2 * Math.PI);
         this.ctx.fillStyle = '#ffffff';
         this.ctx.fill();
         this.ctx.strokeStyle = '#e30052';
         this.ctx.lineWidth = 4;
         this.ctx.stroke();
-        this.ctx.font = '28px Arial';
+        this.ctx.font = '36px Arial'; // Bigger heart
         this.ctx.fillStyle = '#e30052';
         this.ctx.strokeStyle = '#e30052';
         this.ctx.fillText('💕', centerX, centerY);
@@ -416,13 +439,13 @@ class RomanticRoulette {
         // Calculate random result
         const segments = this.options.length;
         const segmentAngle = 360 / segments;
-        const randomSpins = 8 + Math.random() * 4; // More spins
+        const randomSpins = 10 + Math.random() * 8; // Much more spins for more drama
         const randomSegment = Math.floor(Math.random() * segments);
         const finalRotation = 360 * randomSpins + (360 - randomSegment * segmentAngle - segmentAngle / 2);
         
         // Smooth animation with gradual deceleration
         const startTime = Date.now();
-        const duration = 4000; // Optimal duration for smooth deceleration
+        const duration = 8000; // Much longer duration - 8 seconds!
         const startRotation = this.rotation;
         
         let lastSegment = -1;
