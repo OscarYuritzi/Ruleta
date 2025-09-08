@@ -121,6 +121,8 @@ class RomanticRoulette {
         document.getElementById('wheel-selection').classList.add('hidden');
         document.getElementById('wheel-creator').classList.remove('hidden');
         
+        this.initCanvas();
+        
         const title = document.getElementById('creator-title');
         
         switch (type) {
@@ -136,7 +138,6 @@ class RomanticRoulette {
                 break;
         }
         
-        this.initCanvas();
         this.updateDisplay();
     }
 
