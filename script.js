@@ -734,6 +734,7 @@ function updateOptionsDisplay() {
                 const index = parseInt(e.target.dataset.index);
                 removeOption(index);
             });
+        });
     }
 }
 
