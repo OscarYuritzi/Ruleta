@@ -223,6 +223,7 @@ async function setupRealtimeSubscription() {
     
     // Remove existing subscription if any
     if (realtimeChannel) {
+        console.log(`🗑️ Removiendo canal anterior`);
         supabase.removeChannel(realtimeChannel);
     }
     
@@ -238,11 +239,13 @@ async function setupRealtimeSubscription() {
                 filter: `couple_name=eq.${currentCouple}`
             },
             (payload) => {
-                console.log('🔄 Cambio detectado en pareja:', payload);
+                console.log(`📡 [${currentUser}] Cambio detectado:`, payload.eventType, payload.new?.user_name || payload.old?.user_name);
                 handleRealtimeUpdate(payload);
             }
         )
-        .subscribe();
+        .subscribe((status) => {
+            console.log(`📡 [${currentUser}] Estado de suscripción:`, status);
+        });
     
     console.log(`✅ Suscripción configurada para pareja: ${currentCouple}`);
 }
@@ -250,6 +253,8 @@ async function setupRealtimeSubscription() {
 // Check for existing partners in the couple
 async function checkExistingPartners() {
     if (!supabase || !currentCouple) return;
+    
+    console.log(`🔍 Verificando partners existentes para pareja: ${currentCouple}`);
     
     try {
         const { data: sessions, error } = await supabase
@@ -259,10 +264,14 @@ async function checkExistingPartners() {
             .gte('last_activity', new Date(Date.now() - 5 * 60 * 1000).toISOString());
         
         if (!error && sessions && sessions.length > 0) {
+            console.log(`📋 Sesiones encontradas:`, sessions);
+            
             // Filter out current user and get partners
             connectedPartners = sessions
                 .filter(s => s.user_name !== currentUser)
                 .map(s => s.user_name);
+            
+            console.log(`👥 Partners conectados:`, connectedPartners);
             
             updatePartnerStatus();
             
@@ -270,6 +279,21 @@ async function checkExistingPartners() {
             connectedPartners.forEach(partnerName => {
                 showPartnerConnectionNotification(partnerName, 'already_connected');
             });
+            
+            // Force an update to our session to trigger partner notifications
+            if (currentUserSession && connectedPartners.length > 0) {
+                setTimeout(async () => {
+                    await updateSpinningState(
+                        currentUserSession.id,
+                        false,
+                        0,
+                        null,
+                        []
+                    );
+                }, 1500);
+            }
+        } else {
+            console.log(`👤 No hay partners conectados aún`);
         }
     } catch (error) {
         console.error('Error checking existing partners:', error);
@@ -381,9 +405,73 @@ function handleRealtimeUpdate(payload) {
             updatePartnerStatus();
             showPartnerConnectionNotification(newRecord.user_name, 'joining');
             
-            // Update our session to trigger partner's status update
+            // Force update our session to trigger bidirectional sync
             if (currentUserSession) {
-                updateSpinningState(
+                setTimeout(async () => {
+                    await updateSpinningState(
+                        currentUserSession.id,
+                        false,
+                        wheelRotation,
+                        currentWheelType,
+                        currentOptions
+                    );
+                }, 500); // Small delay to ensure partner's session is fully created
+            }
+        }
+    }
+    
+    if (eventType === 'DELETE' && oldRecord && oldRecord.user_name !== currentUser) {
+        console.log(`👋 Partner desconectado: ${oldRecord.user_name}`);
+        connectedPartners = connectedPartners.filter(name => name !== oldRecord.user_name);
+        updatePartnerStatus();
+        showPartnerConnectionNotification(oldRecord.user_name, 'disconnected');
+    }
+    
+    if (eventType === 'UPDATE' && newRecord) {
+        // Handle partner activity updates - IMPROVED LOGIC
+        if (newRecord.user_name !== currentUser) {
+            const partnerName = newRecord.user_name;
+            const isPartnerActive = new Date(newRecord.last_activity) > new Date(Date.now() - 5 * 60 * 1000);
+            const isInPartnersList = connectedPartners.includes(partnerName);
+            
+            console.log(`🔄 Partner ${partnerName} activity update:`, { 
+                isActive: isPartnerActive, 
+                inList: isInPartnersList,
+                lastActivity: newRecord.last_activity 
+            });
+            
+            if (isPartnerActive && !isInPartnersList) {
+                connectedPartners.push(partnerName);
+                updatePartnerStatus();
+                showPartnerConnectionNotification(partnerName, 'joining');
+            } else if (!isPartnerActive && isInPartnersList) {
+                connectedPartners = connectedPartners.filter(name => name !== partnerName);
+                updatePartnerStatus();
+                showPartnerConnectionNotification(partnerName, 'disconnected');
+            }
+        }
+        
+        // Partner started spinning
+        if (newRecord.is_spinning && !oldRecord?.is_spinning && newRecord.user_name !== currentUser) {
+            console.log(`🎯 ${newRecord.user_name} comenzó a girar`);
+            syncPartnerSpin(newRecord);
+        }
+        
+        // Partner finished spinning
+        if (!newRecord.is_spinning && oldRecord?.is_spinning && newRecord.user_name !== currentUser) {
+            console.log(`🎉 ${newRecord.user_name} terminó de girar:`, newRecord.last_result);
+            syncPartnerResult(newRecord);
+        }
+        
+        // Partner changed wheel type or options
+        if (newRecord.user_name !== currentUser && 
+            (newRecord.wheel_type !== oldRecord?.wheel_type || 
+            JSON.stringify(newRecord.current_options) !== JSON.stringify(oldRecord?.current_options))) {
+            console.log(`🔄 ${newRecord.user_name} cambió la ruleta`);
+            syncPartnerWheel(newRecord);
+        }
+    }
+}
                     currentUserSession.id,
                     false,
                     wheelRotation,
