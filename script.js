@@ -161,8 +161,8 @@ class RomanticRoulette {
         
         // Set actual canvas size for crisp rendering
         const scale = window.devicePixelRatio || 1;
-        this.canvas.width = 300 * scale;
-        this.canvas.height = 300 * scale;
+        this.canvas.width = 600 * scale;
+        this.canvas.height = 600 * scale;
         this.ctx.scale(scale, scale);
         
         this.drawWheel();
@@ -218,7 +218,7 @@ class RomanticRoulette {
         const spinBtn = document.getElementById('spin-btn');
         spinBtn.disabled = this.options.length < 2;
         if (this.options.length >= 2) {
-            spinBtn.textContent = `GIRAR 💕 (${this.options.length} opciones)`;
+            spinBtn.textContent = `🎯 Girar ruleta`;
         } else {
             spinBtn.textContent = 'Agrega más opciones ✨';
         }
@@ -230,99 +230,211 @@ class RomanticRoulette {
             return;
         }
         
-        const centerX = 150;
-        const centerY = 150;
-        const radius = 130;
+        const centerX = 300;
+        const centerY = 300;
+        const radius = 250;
         const segments = this.options.length;
         const anglePerSegment = (2 * Math.PI) / segments;
         
-        // Romantic color palette
-        const colors = [
-            '#ff6b9d', '#c44569', '#f8b500', '#ff9a9e',
-            '#fecfef', '#fbb6ce', '#f093fb', '#f5576c',
-            '#4facfe', '#00f2fe', '#43e97b', '#38f9d7'
+        // Princess color palette - elegant and bright
+        const princessColors = [
+            '#FF69B4', '#FFB6C1', '#FF1493', '#FFE4E1',
+            '#DDA0DD', '#DA70D6', '#BA55D3', '#9370DB',
+            '#FF6347', '#FFA07A', '#FFD700', '#FFFF00',
+            '#98FB98', '#87CEEB', '#87CEFA', '#B0E0E6',
+            '#F0E68C', '#FFEFD5', '#FFDAB9', '#FFE4B5'
         ];
         
-        this.ctx.clearRect(0, 0, 300, 300);
+        this.ctx.clearRect(0, 0, 600, 600);
         this.ctx.save();
         this.ctx.translate(centerX, centerY);
         this.ctx.rotate(this.rotation * Math.PI / 180);
         
-        // Draw segments
+        // Draw outer decorative ring
+        this.ctx.beginPath();
+        this.ctx.arc(0, 0, radius + 15, 0, 2 * Math.PI);
+        const outerGradient = this.ctx.createRadialGradient(0, 0, radius - 30, 0, 0, radius + 15);
+        outerGradient.addColorStop(0, '#FFD700');
+        outerGradient.addColorStop(0.7, '#FF69B4');
+        outerGradient.addColorStop(1, '#8A2BE2');
+        this.ctx.fillStyle = outerGradient;
+        this.ctx.fill();
+        
+        // Draw segments with princess style
         for (let i = 0; i < segments; i++) {
             const startAngle = i * anglePerSegment;
             const endAngle = (i + 1) * anglePerSegment;
-            const color = colors[i % colors.length];
+            const color = princessColors[i % princessColors.length];
             
-            // Draw segment
+            // Draw segment with gradient
             this.ctx.beginPath();
             this.ctx.arc(0, 0, radius, startAngle, endAngle);
             this.ctx.lineTo(0, 0);
-            this.ctx.fillStyle = color;
+            
+            // Create beautiful gradient for each segment
+            const segmentGradient = this.ctx.createRadialGradient(0, 0, 0, 0, 0, radius);
+            segmentGradient.addColorStop(0, '#FFFFFF');
+            segmentGradient.addColorStop(0.3, color);
+            segmentGradient.addColorStop(1, color);
+            this.ctx.fillStyle = segmentGradient;
             this.ctx.fill();
+            
+            // Add sparkle effect border
             this.ctx.strokeStyle = 'white';
-            this.ctx.lineWidth = 3;
+            this.ctx.lineWidth = 4;
             this.ctx.stroke();
             
-            // Draw text (only for normal wheel)
+            // Add inner shadow for depth
+            this.ctx.beginPath();
+            this.ctx.arc(0, 0, radius - 8, startAngle, endAngle);
+            this.ctx.lineTo(0, 0);
+            this.ctx.strokeStyle = 'rgba(0,0,0,0.1)';
+            this.ctx.lineWidth = 2;
+            this.ctx.stroke();
+
+            // Draw text - Show actual options
             if (this.wheelType !== 'mystery') {
                 this.ctx.save();
                 this.ctx.rotate(startAngle + anglePerSegment / 2);
                 this.ctx.textAlign = 'center';
-                this.ctx.fillStyle = 'white';
-                this.ctx.font = 'bold 12px Poppins';
-                this.ctx.shadowColor = 'rgba(0,0,0,0.5)';
-                this.ctx.shadowBlur = 2;
                 
+                // Beautiful text styling
+                const fontSize = Math.max(14, Math.min(20, radius * 0.06));
+                this.ctx.font = `bold ${fontSize}px 'Dancing Script', cursive`;
+                this.ctx.fillStyle = '#FFFFFF';
+                this.ctx.strokeStyle = '#4A0E4E';
+                this.ctx.lineWidth = 3;
+                this.ctx.shadowColor = 'rgba(0,0,0,0.8)';
+                this.ctx.shadowBlur = 4;
+                this.ctx.shadowOffsetX = 2;
+                this.ctx.shadowOffsetY = 2;
+
+                // Smart text display
                 const text = this.options[i];
-                const maxLength = 25;
-                const displayText = text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+                const maxLength = radius > 200 ? 35 : radius > 150 ? 28 : 20;
                 
-                this.ctx.fillText(displayText, radius * 0.7, 5);
+                if (text.length <= maxLength) {
+                    // Single line
+                    this.ctx.strokeText(text, radius * 0.65, 0);
+                    this.ctx.fillText(text, radius * 0.65, 0);
+                } else {
+                    // Two lines
+                    const words = text.split(' ');
+                    const line1 = [];
+                    const line2 = [];
+                    let currentLength = 0;
+                    
+                    for (const word of words) {
+                        if (currentLength + word.length + 1 <= maxLength / 2 && line1.length < 3) {
+                            line1.push(word);
+                            currentLength += word.length + 1;
+                        } else {
+                            line2.push(word);
+                        }
+                    }
+                    
+                    const text1 = line1.join(' ');
+                    const text2 = line2.join(' ').substring(0, maxLength / 2);
+                    
+                    if (text2.length === 0) {
+                        // Fallback: truncate
+                        const truncated = text.substring(0, maxLength - 3) + '...';
+                        this.ctx.strokeText(truncated, radius * 0.65, 0);
+                        this.ctx.fillText(truncated, radius * 0.65, 0);
+                    } else {
+                        // Two lines
+                        this.ctx.strokeText(text1, radius * 0.65, -fontSize/2);
+                        this.ctx.fillText(text1, radius * 0.65, -fontSize/2);
+                        this.ctx.strokeText(text2, radius * 0.65, fontSize/2);
+                        this.ctx.fillText(text2, radius * 0.65, fontSize/2);
+                    }
+                }
+                
                 this.ctx.restore();
             } else {
-                // Draw mystery icons
+                // Draw mystery icon with sparkles
                 this.ctx.save();
                 this.ctx.rotate(startAngle + anglePerSegment / 2);
                 this.ctx.textAlign = 'center';
-                this.ctx.font = '24px Arial';
-                this.ctx.fillText('🎁', radius * 0.7, 8);
+                const iconSize = Math.max(24, radius * 0.08);
+                this.ctx.font = `${iconSize}px Arial`;
+                this.ctx.fillText('🎁✨', radius * 0.65, 10);
                 this.ctx.restore();
             }
         }
-        
+
         this.ctx.restore();
-        
-        // Draw center circle
+
+        // Draw beautiful center jewel
         this.ctx.beginPath();
-        this.ctx.arc(centerX, centerY, 30, 0, 2 * Math.PI);
-        this.ctx.fillStyle = 'white';
+        this.ctx.arc(centerX, centerY, 45, 0, 2 * Math.PI);
+        
+        // Center gradient - like a precious gem
+        const centerGradient = this.ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, 45);
+        centerGradient.addColorStop(0, '#FFFFFF');
+        centerGradient.addColorStop(0.3, '#FFD700');
+        centerGradient.addColorStop(0.7, '#FF69B4');
+        centerGradient.addColorStop(1, '#8A2BE2');
+        this.ctx.fillStyle = centerGradient;
         this.ctx.fill();
-        this.ctx.strokeStyle = '#ff6b9d';
-        this.ctx.lineWidth = 4;
+        
+        // Multiple decorative borders
+        this.ctx.strokeStyle = '#FFFFFF';
+        this.ctx.lineWidth = 6;
         this.ctx.stroke();
+        
+        this.ctx.beginPath();
+        this.ctx.arc(centerX, centerY, 38, 0, 2 * Math.PI);
+        this.ctx.strokeStyle = '#FFD700';
+        this.ctx.lineWidth = 3;
+        this.ctx.stroke();
+        
+        // Center crown emoji
+        this.ctx.textAlign = 'center';
+        this.ctx.textBaseline = 'middle';
+        this.ctx.font = '32px Arial';
+        this.ctx.fillText('👑', centerX, centerY);
     }
 
     drawEmptyWheel() {
         if (!this.ctx) return;
         
-        this.ctx.clearRect(0, 0, 300, 300);
+        const centerX = 300;
+        const centerY = 300;
+        const radius = 250;
         
-        // Draw empty circle
+        this.ctx.clearRect(0, 0, 600, 600);
+        
+        // Draw empty circle with princess gradient
         this.ctx.beginPath();
-        this.ctx.arc(150, 150, 130, 0, 2 * Math.PI);
-        this.ctx.fillStyle = 'linear-gradient(45deg, #fbb6ce, #fecfef)';
+        this.ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+        const emptyGradient = this.ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius);
+        emptyGradient.addColorStop(0, '#FFFFFF');
+        emptyGradient.addColorStop(0.5, '#FFB6C1');
+        emptyGradient.addColorStop(1, '#FF69B4');
+        this.ctx.fillStyle = emptyGradient;
         this.ctx.fill();
-        this.ctx.strokeStyle = '#ff6b9d';
-        this.ctx.lineWidth = 4;
+        this.ctx.strokeStyle = '#FF1493';
+        this.ctx.lineWidth = 6;
         this.ctx.stroke();
         
         // Draw message
-        this.ctx.fillStyle = '#c44569';
-        this.ctx.font = 'bold 16px Poppins';
+        this.ctx.fillStyle = '#8A2BE2';
+        this.ctx.font = 'bold 24px Dancing Script';
         this.ctx.textAlign = 'center';
-        this.ctx.fillText('Agrega opciones', 150, 145);
-        this.ctx.fillText('románticas 💕', 150, 165);
+        this.ctx.fillText('Agrega opciones', centerX, centerY - 10);
+        this.ctx.fillText('románticas 💕', centerX, centerY + 20);
+        
+        // Draw center jewel
+        this.ctx.beginPath();
+        this.ctx.arc(centerX, centerY, 45, 0, 2 * Math.PI);
+        this.ctx.fillStyle = '#FFD700';
+        this.ctx.fill();
+        this.ctx.strokeStyle = '#FFFFFF';
+        this.ctx.lineWidth = 4;
+        this.ctx.stroke();
+        this.ctx.font = '32px Arial';
+        this.ctx.fillText('👑', centerX, centerY);
     }
 
     spinWheel() {
@@ -343,19 +455,32 @@ class RomanticRoulette {
         const randomSegment = Math.floor(Math.random() * segments);
         const finalRotation = 360 * randomSpins + (360 - randomSegment * segmentAngle - segmentAngle / 2);
         
-        // Apply CSS animation
-        const canvas = document.getElementById('wheel-canvas');
-        canvas.style.setProperty('--final-rotation', finalRotation + 'deg');
-        canvas.classList.add('wheel-spinning');
+        // Smooth animation
+        const startTime = Date.now();
+        const duration = 3000;
+        const startRotation = this.rotation;
         
-        // Show result after animation
-        setTimeout(() => {
-            this.showResult(randomSegment);
-            canvas.classList.remove('wheel-spinning');
-            this.isSpinning = false;
-            spinBtn.disabled = false;
-            spinBtn.textContent = `GIRAR 💕 (${this.options.length} opciones)`;
-        }, 3000);
+        const animate = () => {
+            const elapsed = Date.now() - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            
+            // Easing function for smooth deceleration
+            const easeOut = 1 - Math.pow(1 - progress, 3);
+            
+            this.rotation = startRotation + (finalRotation - startRotation) * easeOut;
+            this.drawWheel();
+            
+            if (progress < 1) {
+                requestAnimationFrame(animate);
+            } else {
+                this.showResult(randomSegment);
+                this.isSpinning = false;
+                spinBtn.disabled = false;
+                spinBtn.textContent = '🎯 Girar ruleta';
+            }
+        };
+        
+        animate();
     }
 
     showResult(segmentIndex) {
