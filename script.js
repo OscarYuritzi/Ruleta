@@ -296,7 +296,7 @@ class RomanticRoulette {
         const anglePerSegment = (2 * Math.PI) / segments;
         
         // Colores más suaves y legibles
-        const colors = ['#ffffff', '#ffe4e6', '#ffccd5', '#ffeef0'];
+        const colors = ['#000000', '#1a0d0f', '#330a0f', '#1f0408'];
         
         this.ctx.clearRect(0, 0, 600, 600);
         this.ctx.save();
@@ -319,7 +319,7 @@ class RomanticRoulette {
             this.ctx.fill();
             
             // Borde más sutil
-            this.ctx.strokeStyle = '#e30052';
+            this.ctx.strokeStyle = '#e30070';
             this.ctx.lineWidth = 2;
             this.ctx.stroke();
 
@@ -338,8 +338,8 @@ class RomanticRoulette {
             const textRadius = radius * 0.7;
             
             // Texto con alto contraste
-            this.ctx.fillStyle = '#1a1a1a';
-            this.ctx.strokeStyle = '#ffffff';
+            this.ctx.fillStyle = '#ffffff';
+            this.ctx.strokeStyle = '#000000';
             this.ctx.lineWidth = 3;
 
             let displayText;
@@ -401,10 +401,10 @@ class RomanticRoulette {
         const centerRadius = size * 0.075; // 7.5% of canvas size
         this.ctx.beginPath();
         this.ctx.arc(centerX, centerY, centerRadius, 0, 2 * Math.PI);
-        this.ctx.fillStyle = '#ffffff';
+        this.ctx.fillStyle = '#000000';
         this.ctx.fill();
         
-        this.ctx.strokeStyle = '#e30052';
+        this.ctx.strokeStyle = '#e30070';
         this.ctx.lineWidth = 4;
         this.ctx.stroke();
         
@@ -412,8 +412,8 @@ class RomanticRoulette {
         this.ctx.textAlign = 'center';
         this.ctx.textBaseline = 'middle';
         this.ctx.font = `bold ${Math.floor(size * 0.045)}px Arial`; // Responsive heart size
-        this.ctx.fillStyle = '#e30052';
-        this.ctx.strokeStyle = '#e30052';
+        this.ctx.fillStyle = '#e30070';
+        this.ctx.strokeStyle = '#e30070';
         this.ctx.fillText('💕', centerX, centerY);
     }
 
@@ -429,14 +429,14 @@ class RomanticRoulette {
         // Draw empty circle
         this.ctx.beginPath();
         this.ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
-        this.ctx.fillStyle = '#ffffff';
+        this.ctx.fillStyle = '#000000';
         this.ctx.fill();
-        this.ctx.strokeStyle = '#e30052';
+        this.ctx.strokeStyle = '#e30070';
         this.ctx.lineWidth = 4;
         this.ctx.stroke();
         
         // Draw message
-        this.ctx.fillStyle = '#1a1a1a';
+        this.ctx.fillStyle = '#ffffff';
         this.ctx.font = `bold ${Math.floor(size * 0.033)}px "Poppins", Arial, sans-serif`; // Responsive text
         this.ctx.textAlign = 'center';
         this.ctx.textBaseline = 'middle';
@@ -447,14 +447,14 @@ class RomanticRoulette {
         const centerRadius = size * 0.075;
         this.ctx.beginPath();
         this.ctx.arc(centerX, centerY, centerRadius, 0, 2 * Math.PI);
-        this.ctx.fillStyle = '#ffffff';
+        this.ctx.fillStyle = '#000000';
         this.ctx.fill();
-        this.ctx.strokeStyle = '#e30052';
+        this.ctx.strokeStyle = '#e30070';
         this.ctx.lineWidth = 4;
         this.ctx.stroke();
         this.ctx.font = `${Math.floor(size * 0.045)}px Arial`; // Responsive heart
-        this.ctx.fillStyle = '#e30052';
-        this.ctx.strokeStyle = '#e30052';
+        this.ctx.fillStyle = '#e30070';
+        this.ctx.strokeStyle = '#e30070';
         this.ctx.fillText('💕', centerX, centerY);
     }
 
