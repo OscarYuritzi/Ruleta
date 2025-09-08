@@ -483,14 +483,14 @@ function App() {
                   📍
                 </div>
                 
-                {/* Canvas - Much larger responsive sizing */}
+                {/* Canvas - Extra large sizing */}
                 <canvas
                   ref={canvasRef}
-                  className="rounded-full shadow-xl border-4 border-white transition-transform duration-3000 ease-out"
+                  className="rounded-full shadow-xl border-4 border-white transition-transform duration-3000 ease-out block mx-auto"
                   style={{
                     transform: `rotate(${rotation}deg)`,
-                    width: '400px',
-                    height: '400px'
+                    width: '480px',
+                    height: '480px'
                   }}
                 />
               </div>
@@ -505,34 +505,26 @@ function App() {
           </div>
         </div>
 
-        {/* Spin Button - Completely separate section */}
-        <div className="mt-8 flex justify-center">
-          <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-6 shadow-lg w-full max-w-md">
-            <button
-              onClick={spinWheel}
-              disabled={isSpinning || options.length < 2}
-              className="w-full bg-gradient-to-r from-pink-500 to-purple-600 text-white px-8 py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105"
-            >
-              {isSpinning ? (
-                <div className="flex items-center justify-center gap-3">
-                  <div className="w-6 h-6 border-3 border-white border-t-transparent rounded-full animate-spin"></div>
-                  <span>Girando... 💫</span>
-                </div>
-              ) : options.length < 2 ? (
-                <span>Agrega más opciones ✨</span>
-              ) : (
-                <span>🎯 GIRAR RULETA 💕</span>
-              )}
-            </button>
-            
-            {/* Additional info */}
-            <div className="mt-3 text-center text-sm text-gray-600">
-              {options.length >= 2 && !isSpinning && (
-                <p>¡Haz clic para descubrir tu sorpresa romántica! 💖</p>
-              )}
-            </div>
+        {/* Spin Button - Fixed at bottom of screen */}
+        <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-20">
+          <button
+            onClick={spinWheel}
+            disabled={isSpinning || options.length < 2}
+            className="bg-gradient-to-r from-pink-500 to-purple-600 text-white px-8 py-4 rounded-full font-bold text-xl shadow-2xl hover:shadow-3xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-110 border-4 border-white"
+            style={{ minWidth: '200px' }}
+          >
+            {isSpinning ? (
+              <div className="flex items-center justify-center gap-3">
+                <div className="w-6 h-6 border-3 border-white border-t-transparent rounded-full animate-spin"></div>
+                <span>Girando... 💫</span>
+              </div>
+            ) : options.length < 2 ? (
+              <span>Agrega opciones ✨</span>
+            ) : (
+              <span>🎯 GIRAR 💕</span>
+            )}
+          </button>
           </div>
-        </div>
       </main>
 
       {/* Result Modal */}

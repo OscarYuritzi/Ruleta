@@ -41,45 +41,45 @@
 }
 
 /* Responsive canvas sizing */
-canvas {
-  display: block;
-  max-width: 100%;
-  height: auto;
-}
-
-/* Touch-friendly button sizing for mobile */
-@media (max-width: 640px) {
-  button {
-    min-height: 44px;
-    min-width: 44px;
-  }
-  
-  /* Responsive wheel sizing */
-  canvas {
-    width: 320px !important;
-    height: 320px !important;
-  }
-}
-
 @media (max-width: 480px) {
   canvas {
-    width: 280px !important;
-    height: 280px !important;
+    width: 350px !important;
+    height: 350px !important;
+  }
+}
+
+@media (max-width: 640px) {
+  canvas {
+    width: 380px !important;
+    height: 380px !important;
   }
 }
 
 @media (min-width: 768px) {
   canvas {
-    width: 500px !important;
-    height: 500px !important;
+    width: 520px !important;
+    height: 520px !important;
   }
 }
 
 @media (min-width: 1024px) {
   canvas {
-    width: 600px !important;
-    height: 600px !important;
+    width: 560px !important;
+    height: 560px !important;
   }
+}
+
+/* Fixed spin button styling */
+.fixed {
+  position: fixed;
+}
+
+.bottom-6 {
+  bottom: 1.5rem;
+}
+
+.shadow-3xl {
+  box-shadow: 0 35px 60px -12px rgba(0, 0, 0, 0.25);
 }
 
 /* Improved scrollbar styling */
