@@ -916,7 +916,7 @@ body {
     }
     
     .creator-content {
-        gap: 15px; /* Aún menos gap en móviles */
+        gap: 10px; /* Minimal gap to maximize wheel space */
     }
     
     .wheel-creator {
