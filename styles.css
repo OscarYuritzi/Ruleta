@@ -438,6 +438,9 @@ body {
     flex-direction: column;
     align-items: center;
     gap: 15px;
+    width: 100%;
+    max-width: 800px;
+    margin: 0 auto;
 }
 
 .spin-button-container {
@@ -578,7 +581,9 @@ body {
     width: 800px;
     height: 800px;
     display: block;
-    position: relative;
+    max-width: 100%;
+    height: auto;
+    aspect-ratio: 1;
 }
 
 /* Saved Wheels */
@@ -830,9 +835,8 @@ body {
         flex-direction: column;
     }
     
-    #wheel-canvas {
-        width: 500px;
-        height: 500px;
+    .wheel-container {
+        max-width: 500px;
     }
     
     .wheel-pointer {
@@ -893,9 +897,8 @@ body {
         font-size: 1.3rem;
     }
     
-    #wheel-canvas {
-        width: 400px;
-        height: 400px;
+    .wheel-container {
+        max-width: 400px;
     }
     
     .wheel-pointer {

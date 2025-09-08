@@ -254,7 +254,7 @@ class RomanticRoulette {
             return;
         }
         
-        const centerX = 400; // Increased for bigger canvas
+        const centerX = 400;
         const centerY = 400;
         const radius = 350; // Much bigger radius
         const segments = this.options.length;
@@ -265,6 +265,7 @@ class RomanticRoulette {
         
         this.ctx.clearRect(0, 0, 600, 600);
         this.ctx.save();
+        this.ctx.translate(centerX, centerY);
         this.ctx.clearRect(0, 0, 800, 800);
         this.ctx.rotate(this.rotation * Math.PI / 180);
         
@@ -317,7 +318,7 @@ class RomanticRoulette {
             
             // Para la ruleta sorpresa, solo mostrar el emoji grande
             if (this.wheelType === 'surprise') {
-                this.ctx.font = `${fontSize + 8}px Arial`; // Emojis más grandes
+                this.ctx.font = `${fontSize + 12}px Arial`; // Emojis más grandes
                 this.ctx.fillText(displayText, textRadius, 0);
             } else {
             // Handle text length
