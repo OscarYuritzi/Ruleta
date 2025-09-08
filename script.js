@@ -155,6 +155,7 @@ class RomanticRoulette {
                     schema: 'public',
                     table: 'realtime_sessions'
                 }, (payload) => {
+                    console.log('Realtime update received:', payload);
                     this.handleRealtimeUpdate(payload);
                 })
                 .subscribe();
@@ -162,10 +163,11 @@ class RomanticRoulette {
             // Cargar sesiones activas iniciales
             await this.loadActiveSessions();
             
-            // Actualizar cada 10 segundos para sincronización rápida
+            // Actualizar cada 5 segundos para sincronización rápida
             setInterval(() => {
                 this.keepSessionAlive();
-            }, 10000);
+                this.loadActiveSessions(); // También recargar sesiones activas
+            }, 5000);
 
         } catch (error) {
             console.error('Error setting up realtime connection:', error);
@@ -202,11 +204,13 @@ class RomanticRoulette {
 
     handleRealtimeUpdate(payload) {
         const { eventType, new: newRecord, old: oldRecord } = payload;
+        console.log('Processing realtime update:', eventType, newRecord);
         
         switch (eventType) {
             case 'INSERT':
                 if (!this.activeSessions.find(s => s.id === newRecord.id)) {
                     this.activeSessions.push(newRecord);
+                    console.log('Added new session:', newRecord.user_name);
                 }
                 break;
             case 'UPDATE':
@@ -214,17 +218,22 @@ class RomanticRoulette {
                 if (index > -1) {
                     this.activeSessions[index] = newRecord;
                     
-                    // Sincronizar con otros usuarios inmediatamente
+                    console.log('Updated session:', newRecord.user_name, 'spinning:', newRecord.is_spinning);
+                    
+                    // Sincronizar con otros usuarios inmediatamente (solo si no es nuestra propia sesión)
                     if (newRecord.id !== this.currentSession?.id) {
+                        console.log('Syncing remote wheel state for:', newRecord.user_name);
                         this.syncRemoteWheelState(newRecord);
                     }
                 } else {
                     // Si no existe, agregarlo
                     this.activeSessions.push(newRecord);
+                    console.log('Added missing session:', newRecord.user_name);
                 }
                 break;
             case 'DELETE':
                 this.activeSessions = this.activeSessions.filter(s => s.id !== oldRecord.id);
+                console.log('Removed session:', oldRecord.user_name);
                 break;
         }
         
@@ -232,21 +241,52 @@ class RomanticRoulette {
     }
 
     syncRemoteWheelState(remoteSession) {
-        // Solo sincronizar si estamos en la pantalla de la ruleta
-        const wheelCanvas = document.getElementById('wheel-canvas');
-        if (!wheelCanvas || this.isSpinning) return;
+        console.log('syncRemoteWheelState called for:', remoteSession.user_name);
+        console.log('Remote session data:', {
+            is_spinning: remoteSession.is_spinning,
+            wheel_type: remoteSession.wheel_type,
+            options_count: remoteSession.current_options?.length,
+            last_result: remoteSession.last_result
+        });
         
-        // Si alguien más está girando, sincronizar completamente
+        // No sincronizar si estamos girando nosotros mismos
+        if (this.isSpinning) {
+            console.log('Not syncing - we are spinning');
+            return;
+        }
+        
+        // Si alguien más está girando o acaba de girar, sincronizar completamente
         if (remoteSession.is_spinning && remoteSession.wheel_type && remoteSession.current_options?.length > 0) {
+            console.log('Syncing spinning wheel from:', remoteSession.user_name);
+            
+            // Cambiar a la pantalla de la ruleta si no estamos ahí
+            const wheelSelection = document.getElementById('wheel-selection');
+            const wheelCreator = document.getElementById('wheel-creator');
+            
+            if (!wheelSelection.classList.contains('hidden')) {
+                console.log('Switching to wheel creator view');
+                wheelSelection.classList.add('hidden');
+                wheelCreator.classList.remove('hidden');
+            }
+            
             const wasOnSameType = this.wheelType === remoteSession.wheel_type;
             
             if (!wasOnSameType) {
+                console.log('Switching wheel type to:', remoteSession.wheel_type);
                 // Cambiar al tipo de ruleta que está girando
-                this.selectWheelType(remoteSession.wheel_type);
+                this.wheelType = remoteSession.wheel_type;
+                this.setupWheelType(remoteSession.wheel_type);
             }
             
             // Sincronizar opciones y rotación
             this.options = [...remoteSession.current_options];
+            console.log('Synced options:', this.options.length);
+            
+            // Asegurarse de que el canvas esté inicializado
+            if (!this.canvas) {
+                this.initCanvas();
+            }
+            
             this.updateDisplay();
             
             // Animar rotación con más fluidez
@@ -258,8 +298,29 @@ class RomanticRoulette {
         
         // Mostrar resultado cuando termine de girar
         if (!remoteSession.is_spinning && remoteSession.last_result && this.lastSyncedResult !== remoteSession.last_result) {
+            console.log('Showing remote result:', remoteSession.last_result);
             this.lastSyncedResult = remoteSession.last_result;
             this.showRemoteResult(remoteSession.user_name, remoteSession.last_result);
+        }
+    }
+    
+    setupWheelType(type) {
+        const title = document.getElementById('creator-title');
+        const optionsPanel = document.getElementById('options-panel');
+        
+        switch (type) {
+            case 'mystery':
+                title.textContent = 'Ruleta Misteriosa 🎁✨';
+                optionsPanel.style.display = 'block';
+                break;
+            case 'normal':
+                title.textContent = 'Ruleta Normal 🎀💕';
+                optionsPanel.style.display = 'block';
+                break;
+            case 'surprise':
+                title.textContent = 'Ruleta Sorpresa 💗🌟';
+                optionsPanel.style.display = 'none';
+                break;
         }
     }
     
@@ -295,6 +356,7 @@ class RomanticRoulette {
     }
     
     showRemoteResult(userName, result) {
+        console.log('Showing remote result modal for:', userName, result);
         // Crear notificación de resultado remoto
         const notification = document.createElement('div');
         notification.style.cssText = `
@@ -303,34 +365,37 @@ class RomanticRoulette {
             left: 50%;
             transform: translate(-50%, -50%);
             background: rgba(0, 0, 0, 0.95);
+            backdrop-filter: blur(10px);
             color: white;
-            padding: 20px 30px;
-            border-radius: 15px;
+            padding: 30px 40px;
+            border-radius: 20px;
             border: 2px solid #e30070;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
             z-index: 1001;
             text-align: center;
-            max-width: 300px;
+            max-width: 400px;
+            min-width: 300px;
             animation: fadeInScale 0.5s ease-out;
         `;
         
         notification.innerHTML = `
-            <div style="font-weight: 600; color: #e30070; margin-bottom: 10px;">
+            <div style="font-weight: 700; color: #e30070; margin-bottom: 15px; font-size: 1.2rem;">
                 🎉 Resultado de ${userName}:
             </div>
-            <div style="font-size: 1.1rem; margin-bottom: 10px;">
+            <div style="font-size: 1.3rem; margin-bottom: 15px; font-weight: 600; line-height: 1.4;">
                 ${result}
             </div>
-            <div style="font-size: 0.8rem; opacity: 0.7;">
+            <div style="font-size: 0.9rem; opacity: 0.8; color: #ffccdd;">
                 ✨ Resultado sincronizado ✨
             </div>
         `;
         
         document.body.appendChild(notification);
         
-        // Remover después de 4 segundos
+        // Remover después de 8 segundos
         setTimeout(() => {
             notification.remove();
-        }, 4000);
+        }, 8000);
     }
 
     animateToRotation(targetRotation) {
@@ -871,6 +936,7 @@ class RomanticRoulette {
     spinWheel() {
         if (this.isSpinning || this.options.length < 2) return;
         
+        console.log('Starting wheel spin with options:', this.options);
         this.isSpinning = true;
         
         // Notificar a otros usuarios que estamos girando
@@ -894,6 +960,8 @@ class RomanticRoulette {
         const randomSegment = Math.floor(Math.random() * segments);
         const finalRotation = 360 * randomSpins + (360 - randomSegment * segmentAngle - segmentAngle / 2);
         
+        console.log('Spin calculation:', { segments, randomSegment, finalRotation });
+        
         // Smooth animation with gradual deceleration
         const startTime = Date.now();
         const duration = 8000; // Much longer duration - 8 seconds!
@@ -911,6 +979,12 @@ class RomanticRoulette {
                 : 1 - Math.pow(-2 * progress + 2, 3) / 2;
             
             this.rotation = startRotation + (finalRotation - startRotation) * easeOut;
+            
+            // Notificar rotación actual a otros usuarios durante el giro
+            if (progress > 0.1 && progress < 0.9 && Math.random() < 0.1) { // 10% chance cada frame
+                this.updateSpinProgress();
+            }
+            
             this.drawWheel();
             
             // Add tick sound effect when crossing segments
@@ -924,6 +998,7 @@ class RomanticRoulette {
                 requestAnimationFrame(animate);
             } else {
                 pointer.classList.remove('spinning');
+                console.log('Spin completed, final result:', this.options[randomSegment]);
                 this.showResult(randomSegment);
                 this.isSpinning = false;
                 this.notifySpinEnd(); // Notificar que terminó de girar
@@ -934,8 +1009,27 @@ class RomanticRoulette {
         
         animate();
     }
+    
+    async updateSpinProgress() {
+        if (this.currentSession) {
+            try {
+                const { updateSpinningState } = await import('./src/supabase.js');
+                await updateSpinningState(
+                    this.currentSession.id,
+                    true,
+                    this.rotation,
+                    this.wheelType,
+                    this.options,
+                    null
+                );
+            } catch (error) {
+                console.error('Error updating spin progress:', error);
+            }
+        }
+    }
 
     async notifySpinStart() {
+        console.log('Notifying spin start to other users');
         if (this.currentSession) {
             try {
                 const { updateSpinningState } = await import('./src/supabase.js');
@@ -950,7 +1044,7 @@ class RomanticRoulette {
                 if (error) {
                     console.error('Error notifying spin start:', error);
                 } else {
-                    console.log('Spin start notified successfully');
+                    console.log('Spin start notified successfully', data);
                 }
             } catch (error) {
                 console.error('Error notifying spin start:', error);
@@ -965,6 +1059,8 @@ class RomanticRoulette {
         const normalizedRotation = ((360 - (this.rotation % 360)) + 360) % 360;
         const resultIndex = Math.floor(normalizedRotation / segmentAngle) % segments;
         const result = this.options[resultIndex];
+        
+        console.log('Notifying spin end with result:', result);
         
         if (this.currentSession) {
             try {
@@ -981,7 +1077,7 @@ class RomanticRoulette {
                 if (error) {
                     console.error('Error notifying spin end:', error);
                 } else {
-                    console.log('Spin end notified with result:', result);
+                    console.log('Spin end notified successfully with result:', result, data);
                 }
             } catch (error) {
                 console.error('Error notifying spin end:', error);
