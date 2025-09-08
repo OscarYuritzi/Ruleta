@@ -1,813 +1,604 @@
-class RomanticRoulette {
-    constructor() {
-        this.currentWheel = null;
-        this.wheelType = null;
-        this.options = [];
-        this.canvas = null;
-        this.ctx = null;
-        this.isSpinning = false;
-        this.rotation = 0;
-        this.savedWheels = JSON.parse(localStorage.getItem('romanticWheels')) || [];
-        
-        // Romantic surprise wheel content
-        this.surpriseContent = {
-            romantic_questions: [
-                "¿Cuál es tu recuerdo más romántico conmigo? 💕",
-                "¿Qué es lo que más extrañas de mí? 😢💗",
-                "¿Cuál fue el momento en que supiste que me amabas? 😍",
-                "¿Qué harías si estuviéramos juntos ahora mismo? 🤗",
-                "¿Cuál es tu fantasía romántica favorita? 💭❤️",
-                "¿Qué parte de mi cuerpo es tu favorita? 😏💕",
-                "¿Cómo imaginas nuestra primera cita después de vernos? 🌹",
-                "¿Qué canción te recuerda a mí? 🎵💓"
-            ],
-            virtual_challenges: [
-                "Envía una foto tuya sonriendo ahora mismo 📸😊",
-                "Graba un audio diciéndome 'te amo' en 3 idiomas 🗣️❤️",
-                "Haz una videollamada de 5 minutos solo mirándonos 👀💕",
-                "Escribe un poema corto sobre nosotros 📝💗",
-                "Canta mi canción favorita por videollamada 🎤🎵",
-                "Baila algo sensual para mí por video 💃✨",
-                "Cuenta hasta 100 pero solo números que te recuerden a mí 🔢💕",
-                "Dibuja nuestro futuro juntos y envíamelo 🎨👫"
-            ],
-            romantic_activities: [
-                "Vamos a ver una película juntos por videollamada 🎬💕",
-                "Cocinemos algo al mismo tiempo, cada uno en su casa 👨‍🍳👩‍🍳",
-                "Hagamos una sesión de fotos virtual 📷✨",
-                "Planifiquemos nuestro próximo encuentro 🗓️❤️",
-                "Juguemos verdad o reto romántico 🎯💗",
-                "Escuchemos música romántica juntos 🎵💕",
-                "Contémonos secretos que nadie más sabe 🤫💓",
-                "Hagamos planes para cuando vivamos juntos 🏠👫"
-            ],
-            sweet_exchanges: [
-                "Intercambiemos 5 fotos de nuestra infancia 👶📱",
-                "Enviémonos notas de voz diciendo por qué nos amamos 🎙️❤️",
-                "Compartamos una selfie haciendo la misma pose 🤳💕",
-                "Mandémonos fotos de nuestro lugar favorito de la casa 🏡📸",
-                "Intercambiemos capturas de pantalla de chats antiguos 💬💗",
-                "Enviémonos una foto de algo que nos recuerda al otro 💭📷",
-                "Mandémonos un video corto de nuestro día 🎥🌅",
-                "Intercambiemos una foto de lo que estamos comiendo 🍽️😋"
-            ]
-        };
-        
-        this.init();
-    }
+/* === RESET & BASE === */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
 
-    init() {
-        this.setupEventListeners();
-        this.loadSavedWheels();
-        this.startParticleSystem();
-    }
+body {
+    font-family: 'Dancing Script', cursive;
+    background: linear-gradient(135deg, #ffffff 0%, #ffeeee 50%, #ffe6f2 100%);
+    min-height: 100vh;
+    color: #000000;
+}
 
-    setupEventListeners() {
-        // Wheel type selection
-        document.querySelectorAll('.wheel-card').forEach(card => {
-            card.addEventListener('click', (e) => {
-                this.selectWheelType(card.dataset.type);
-            });
-        });
+/* === HEADER === */
+header {
+    background: #e30052;
+    color: #ffffff;
+    padding: 20px;
+    text-align: center;
+    box-shadow: 0 4px 20px rgba(227, 0, 82, 0.3);
+}
 
-        // Creator actions
-        document.querySelector('.back-btn').addEventListener('click', () => {
-            this.showWheelSelection();
-        });
+header h1 {
+    font-size: 2.5rem;
+    margin-bottom: 10px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
 
-        document.getElementById('add-option').addEventListener('click', () => {
-            this.addOption();
-        });
+header p {
+    font-size: 1.2rem;
+    opacity: 0.9;
+}
 
-        document.getElementById('option-input').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                this.addOption();
-            }
-        });
+/* === CONTAINERS === */
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
 
-        document.getElementById('clear-options').addEventListener('click', () => {
-            this.clearOptions();
-        });
+.section {
+    background: #ffffff;
+    border: 3px solid #000000;
+    border-radius: 15px;
+    padding: 30px;
+    margin: 20px 0;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
 
-        document.getElementById('save-wheel').addEventListener('click', () => {
-            this.saveWheel();
-        });
+.hidden {
+    display: none !important;
+}
 
-        document.getElementById('spin-btn').addEventListener('click', () => {
-            this.spinWheel();
-        });
+/* === WHEEL SELECTION === */
+.wheels-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 25px;
+    margin: 30px 0;
+}
 
-        // Modal actions
-        document.getElementById('spin-again').addEventListener('click', () => {
-            this.closeModal();
-        });
+.wheel-card {
+    background: #ffffff;
+    border: 3px solid #000000;
+    border-radius: 15px;
+    padding: 25px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
 
-        document.getElementById('close-result').addEventListener('click', () => {
-            this.closeModal();
-        });
+.wheel-card:hover {
+    background: #e30052;
+    color: #ffffff;
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(227, 0, 82, 0.3);
+}
 
-        // Close modal on overlay click
-        document.getElementById('result-modal').addEventListener('click', (e) => {
-            if (e.target === document.getElementById('result-modal')) {
-                this.closeModal();
-            }
-        });
-    }
+.wheel-card .wheel-icon {
+    font-size: 3rem;
+    margin-bottom: 15px;
+    display: block;
+}
 
-    selectWheelType(type) {
-        this.wheelType = type;
-        this.options = [];
-        
-        document.getElementById('wheel-selection').classList.add('hidden');
-        document.getElementById('wheel-creator').classList.remove('hidden');
-        
-        const title = document.getElementById('creator-title');
-        
-        switch (type) {
-            case 'mystery':
-                title.textContent = 'Ruleta Misteriosa 🎁✨';
-                break;
-            case 'normal':
-                title.textContent = 'Ruleta Normal 🎀💕';
-                break;
-            case 'surprise':
-                title.textContent = 'Ruleta Sorpresa 💗🌟';
-                this.loadSurpriseContent();
-                break;
-        }
-        
-        this.initCanvas();
-        this.updateDisplay();
-    }
+.wheel-card h3 {
+    font-size: 1.5rem;
+    margin-bottom: 10px;
+    color: inherit;
+}
 
-    loadSurpriseContent() {
-        // Combine all surprise content categories
-        const allContent = [
-            ...this.surpriseContent.romantic_questions,
-            ...this.surpriseContent.virtual_challenges,
-            ...this.surpriseContent.romantic_activities,
-            ...this.surpriseContent.sweet_exchanges
-        ];
-        
-        // Shuffle and select random items
-        this.options = this.shuffleArray(allContent).slice(0, 12);
-        this.updateDisplay();
-        this.drawWheel();
-    }
+.wheel-card p {
+    font-size: 1rem;
+    opacity: 0.8;
+    color: inherit;
+}
 
-    initCanvas() {
-        this.canvas = document.getElementById('wheel-canvas');
-        this.ctx = this.canvas.getContext('2d');
-        
-        // Set actual canvas size for crisp rendering
-        const scale = window.devicePixelRatio || 1;
-        this.canvas.width = 600 * scale;
-        this.canvas.height = 600 * scale;
-        this.ctx.scale(scale, scale);
-        
-        this.drawWheel();
-    }
+/* === WHEEL CREATOR === */
+.creator-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    flex-wrap: wrap;
+    gap: 15px;
+}
 
-    addOption() {
-        const input = document.getElementById('option-input');
-        const text = input.value.trim();
-        
-        if (text && this.options.length < 20) {
-            this.options.push(text);
-            input.value = '';
-            this.updateDisplay();
-            this.drawWheel();
-            
-            // Add some romantic emojis randomly
-            const randomEmojis = ['💕', '✨', '💗', '🌟', '❤️', '💎', '🎉'];
-            this.createParticleEffect(randomEmojis[Math.floor(Math.random() * randomEmojis.length)]);
-        }
-    }
+.back-btn {
+    background: #ffffff;
+    color: #000000;
+    border: 2px solid #000000;
+    padding: 10px 20px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
 
-    removeOption(index) {
-        this.options.splice(index, 1);
-        this.updateDisplay();
-        this.drawWheel();
-    }
+.back-btn:hover {
+    background: #000000;
+    color: #ffffff;
+}
 
-    clearOptions() {
-        this.options = [];
-        this.updateDisplay();
-        this.drawWheel();
-    }
+#creator-title {
+    font-size: 2rem;
+    color: #e30052;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+}
 
-    updateDisplay() {
-        const list = document.getElementById('options-list');
-        list.innerHTML = '';
-        
-        this.options.forEach((option, index) => {
-            const item = document.createElement('div');
-            item.className = 'option-item fade-in';
-            
-            const optionText = this.wheelType === 'mystery' ? `Opción ${index + 1} 🎁` : option;
-            
-            item.innerHTML = `
-                <span class="option-text">${optionText}</span>
-                <button class="remove-option" onclick="roulette.removeOption(${index})">🗑️</button>
-            `;
-            
-            list.appendChild(item);
-        });
-        
-        // Update spin button state
-        const spinBtn = document.getElementById('spin-btn');
-        spinBtn.disabled = this.options.length < 2;
-        if (this.options.length >= 2) {
-            spinBtn.textContent = `🎯 Girar ruleta`;
-        } else {
-            spinBtn.textContent = 'Agrega más opciones ✨';
-        }
-    }
+/* === WHEEL DISPLAY === */
+.wheel-container {
+    display: flex;
+    gap: 30px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+}
 
-    drawWheel() {
-        if (!this.ctx || this.options.length === 0) {
-            this.drawEmptyWheel();
-            return;
-        }
-        
-        const centerX = 300;
-        const centerY = 300;
-        const radius = 250;
-        const segments = this.options.length;
-        const anglePerSegment = (2 * Math.PI) / segments;
-        
-        // Princess color palette - elegant and bright
-        const princessColors = [
-            '#FF69B4', '#FFB6C1', '#FF1493', '#FFE4E1',
-            '#DDA0DD', '#DA70D6', '#BA55D3', '#9370DB',
-            '#FF6347', '#FFA07A', '#FFD700', '#FFFF00',
-            '#98FB98', '#87CEEB', '#87CEFA', '#B0E0E6',
-            '#F0E68C', '#FFEFD5', '#FFDAB9', '#FFE4B5'
-        ];
-        
-        this.ctx.clearRect(0, 0, 600, 600);
-        this.ctx.save();
-        this.ctx.translate(centerX, centerY);
-        this.ctx.rotate(this.rotation * Math.PI / 180);
-        
-        // Draw outer decorative ring
-        this.ctx.beginPath();
-        this.ctx.arc(0, 0, radius + 15, 0, 2 * Math.PI);
-        const outerGradient = this.ctx.createRadialGradient(0, 0, radius - 30, 0, 0, radius + 15);
-        outerGradient.addColorStop(0, '#FFD700');
-        outerGradient.addColorStop(0.7, '#FF69B4');
-        outerGradient.addColorStop(1, '#8A2BE2');
-        this.ctx.fillStyle = outerGradient;
-        this.ctx.fill();
-        
-        // Draw segments with princess style
-        for (let i = 0; i < segments; i++) {
-            const startAngle = i * anglePerSegment;
-            const endAngle = (i + 1) * anglePerSegment;
-            const color = princessColors[i % princessColors.length];
-            
-            // Highlight current segment during spin
-            const isHighlighted = this.currentHighlight === i;
-            
-            // Draw segment with gradient
-            this.ctx.beginPath();
-            this.ctx.arc(0, 0, radius, startAngle, endAngle);
-            this.ctx.lineTo(0, 0);
-            
-            // Create beautiful gradient for each segment
-            const segmentGradient = this.ctx.createRadialGradient(0, 0, 0, 0, 0, radius);
-            if (isHighlighted) {
-                segmentGradient.addColorStop(0, '#FFFF00');
-                segmentGradient.addColorStop(0.3, '#FFD700');
-                segmentGradient.addColorStop(1, color);
-            } else {
-                segmentGradient.addColorStop(0, '#FFFFFF');
-                segmentGradient.addColorStop(0.3, color);
-            }
-            this.ctx.fillStyle = color;
-            this.ctx.fill();
-            
-            // Add border
-            this.ctx.strokeStyle = '#000000';
-            this.ctx.lineWidth = 3;
-            this.ctx.stroke();
+.wheel-display {
+    flex: 1;
+    min-width: 300px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
 
-            // Draw text
-            if (this.wheelType !== 'mystery' || this.options.length > 0) {
-                this.ctx.save();
-                this.ctx.rotate(startAngle + anglePerSegment / 2);
-                this.ctx.textAlign = 'center';
-                this.ctx.textBaseline = 'middle';
-                
-                // Text styling - better sizing and positioning
-                const fontSize = Math.max(14, Math.min(20, 300 / segments));
-                this.ctx.font = `bold ${fontSize}px Arial, sans-serif`;
-                
-                // High contrast text
-                const textColor = color === '#ffffff' ? '#000000' : '#ffffff';
-                const outlineColor = color === '#ffffff' ? '#ffffff' : '#000000';
-                
-                this.ctx.fillStyle = textColor;
-                this.ctx.strokeStyle = outlineColor;
-                this.ctx.lineWidth = 2;
-                
-                // Position text closer to edge but within bounds
-                const textRadius = radius * 0.65;
-                
-                const text = this.wheelType === 'mystery' ? '🎁' : this.options[i];
-                
-                if (this.wheelType === 'mystery') {
-                    // Mystery icon
-                    this.ctx.font = `${fontSize * 1.5}px Arial`;
-                    this.ctx.fillText('🎁', textRadius, 0);
-                } else {
-                    // Regular text - handle long text
-                    const maxLength = Math.max(20, 50 - segments * 2);
-                    
-                    if (text.length <= maxLength) {
-                        this.ctx.strokeText(text, textRadius, 0);
-                        this.ctx.fillText(text, textRadius, 0);
-                    } else {
-                        // Split into two lines
-                        const words = text.split(' ');
-                        const midPoint = Math.ceil(words.length / 2);
-                        const line1 = words.slice(0, midPoint).join(' ');
-                        const line2 = words.slice(midPoint).join(' ');
-                        
-                        const lineHeight = fontSize * 0.8;
-                        
-                        this.ctx.strokeText(line1, textRadius, -lineHeight / 2);
-                        this.ctx.fillText(line1, textRadius, -lineHeight / 2);
-                        
-                        if (line2) {
-                            this.ctx.strokeText(line2, textRadius, lineHeight / 2);
-                            this.ctx.fillText(line2, textRadius, lineHeight / 2);
-                        }
-                    }
-                }
-                
-                this.ctx.restore();
-            }
-        }
+.wheel-wrapper {
+    position: relative;
+    margin: 20px 0;
+}
 
-        this.ctx.restore();
+.wheel-pointer {
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 5rem;
+    color: #e30052;
+    text-shadow: 0 0 20px rgba(227, 0, 82, 0.8);
+    z-index: 10;
+    animation: pulse 2s infinite;
+    filter: drop-shadow(0 0 10px #e30052) drop-shadow(0 0 20px #e30052);
+}
 
-        // Draw center
-        this.ctx.beginPath();
-        this.ctx.arc(centerX, centerY, 40, 0, 2 * Math.PI);
-        this.ctx.fillStyle = '#e30052';
-        this.ctx.fill();
-        this.ctx.strokeStyle = '#000000';
-        this.ctx.lineWidth = 4;
-        this.ctx.stroke();
-        
-        // Center text
-        this.ctx.textAlign = 'center';
-        this.ctx.textBaseline = 'middle';
-        this.ctx.font = '24px Arial';
-        this.ctx.fillStyle = '#ffffff';
-        this.ctx.fillText('💕', centerX, centerY);
-    }
+.wheel-pointer.spinning {
+    animation: spinning-pointer 0.1s infinite, pulse 2s infinite;
+    color: #FFD700;
+    text-shadow: 0 0 30px rgba(255, 215, 0, 1);
+}
 
-    drawEmptyWheel() {
-        if (!this.ctx) return;
-        
-        const centerX = 300;
-        const centerY = 300;
-        const radius = 250;
-        
-        this.ctx.clearRect(0, 0, 600, 600);
-        
-        // Draw empty circle
-        this.ctx.beginPath();
-        this.ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
-        this.ctx.fillStyle = '#ffffff';
-        this.ctx.fill();
-        this.ctx.strokeStyle = '#e30052';
-        this.ctx.lineWidth = 6;
-        this.ctx.stroke();
-        
-        // Draw message
-        this.ctx.fillStyle = '#000000';
-        this.ctx.font = 'bold 24px Arial';
-        this.ctx.textAlign = 'center';
-        this.ctx.fillText('Agrega opciones', centerX, centerY - 15);
-        this.ctx.fillText('románticas 💕', centerX, centerY + 15);
-        
-        // Draw center
-        this.ctx.beginPath();
-        this.ctx.arc(centerX, centerY, 40, 0, 2 * Math.PI);
-        this.ctx.fillStyle = '#e30052';
-        this.ctx.fill();
-        this.ctx.strokeStyle = '#000000';
-        this.ctx.lineWidth = 4;
-        this.ctx.stroke();
-        this.ctx.font = '24px Arial';
-        this.ctx.fillStyle = '#ffffff';
-        this.ctx.fillText('💕', centerX, centerY);
-    }
-                this.ctx.strokeStyle = '#000000';
-                this.ctx.lineWidth = 4;
-                this.ctx.shadowColor = 'rgba(0,0,0,1)';
-                this.ctx.shadowBlur = 6;
-                this.ctx.shadowOffsetX = 3;
-                this.ctx.shadowOffsetY = 3;
+@keyframes pulse {
+    0%, 100% { transform: translateX(-50%) scale(1); }
+    50% { transform: translateX(-50%) scale(1.1); }
+}
 
-                // Smart text display
-                const text = this.options[i];
-                const maxLength = radius > 200 ? 40 : radius > 150 ? 30 : 22;
-                
-                if (text.length <= maxLength) {
-                    // Single line
-                    this.ctx.strokeText(text, radius * 0.7, 0);
-                    this.ctx.fillText(text, radius * 0.7, 0);
-                } else {
-                    // Two lines
-                    const words = text.split(' ');
-                    const line1 = [];
-                    const line2 = [];
-                    let currentLength = 0;
-                    
-                    for (const word of words) {
-                        if (currentLength + word.length + 1 <= maxLength / 2 && line1.length < 4) {
-                            line1.push(word);
-                            currentLength += word.length + 1;
-                        } else {
-                            line2.push(word);
-                        }
-                    }
-                    
-                    const text1 = line1.join(' ');
-                    const text2 = line2.join(' ').substring(0, maxLength / 2);
-                    
-                    if (text2.length === 0) {
-                        // Fallback: truncate
-                        const truncated = text.substring(0, maxLength - 3) + '...';
-                        this.ctx.strokeText(truncated, radius * 0.7, 0);
-                        this.ctx.fillText(truncated, radius * 0.7, 0);
-                    } else {
-                        // Two lines
-                        this.ctx.strokeText(text1, radius * 0.7, -fontSize * 0.6);
-                        this.ctx.fillText(text1, radius * 0.7, -fontSize * 0.6);
-                        this.ctx.strokeText(text2, radius * 0.7, fontSize * 0.6);
-                        this.ctx.fillText(text2, radius * 0.7, fontSize * 0.6);
-                    }
-                }
-                
-                this.ctx.restore();
-            } else {
-                // Draw mystery icon with sparkles
-                this.ctx.save();
-                this.ctx.rotate(startAngle + anglePerSegment / 2);
-                this.ctx.textAlign = 'center';
-                this.ctx.textBaseline = 'middle';
-                const iconSize = Math.max(24, radius * 0.08);
-                this.ctx.font = `${iconSize}px Arial`;
-                this.ctx.fillText('🎁✨', radius * 0.7, 0);
-                this.ctx.restore();
-            }
-        }
+@keyframes spinning-pointer {
+    0%, 100% { transform: translateX(-50%) translateY(0px); }
+    50% { transform: translateX(-50%) translateY(3px); }
+}
 
-        this.ctx.restore();
+#wheel-canvas {
+    border: 12px solid transparent;
+    border-image: linear-gradient(45deg, #e30052, #FFD700, #e30052) 1;
+    border-radius: 50%;
+    box-shadow: 
+        0 0 50px rgba(227, 0, 82, 0.5),
+        inset 0 0 50px rgba(227, 0, 82, 0.1);
+    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(227,0,82,0.1) 100%);
+}
 
-        // Draw beautiful center jewel
-        this.ctx.beginPath();
-        this.ctx.arc(centerX, centerY, 45, 0, 2 * Math.PI);
-        
-        // Center gradient - like a precious gem
-        const centerGradient = this.ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, 45);
-        centerGradient.addColorStop(0, '#FFFFFF');
-        centerGradient.addColorStop(0.3, '#FFD700');
-        centerGradient.addColorStop(0.7, '#FF69B4');
-        centerGradient.addColorStop(1, '#8A2BE2');
-        this.ctx.fillStyle = centerGradient;
-        this.ctx.fill();
-        
-        // Multiple decorative borders
-        this.ctx.strokeStyle = '#FFFFFF';
-        this.ctx.lineWidth = 6;
-        this.ctx.stroke();
-        
-        this.ctx.beginPath();
-        this.ctx.arc(centerX, centerY, 38, 0, 2 * Math.PI);
-        this.ctx.strokeStyle = '#FFD700';
-        this.ctx.lineWidth = 3;
-        this.ctx.stroke();
-        
-        // Center crown emoji
-        this.ctx.textAlign = 'center';
-        this.ctx.textBaseline = 'middle';
-        this.ctx.font = '32px Arial';
-        this.ctx.fillText('👑', centerX, centerY);
-    }
+/* === OPTIONS PANEL === */
+.options-panel {
+    flex: 1;
+    min-width: 300px;
+    background: #ffffff;
+    border: 3px solid #000000;
+    border-radius: 15px;
+    padding: 25px;
+}
 
-    drawEmptyWheel() {
-        if (!this.ctx) return;
-        
-        const centerX = 300;
-        const centerY = 300;
-        const radius = 250;
-        
-        this.ctx.clearRect(0, 0, 600, 600);
-        
-        // Draw empty circle with princess gradient
-        this.ctx.beginPath();
-        this.ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
-        const emptyGradient = this.ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius);
-        emptyGradient.addColorStop(0, '#FFFFFF');
-        emptyGradient.addColorStop(0.5, '#FFB6C1');
-        emptyGradient.addColorStop(1, '#FF69B4');
-        this.ctx.fillStyle = emptyGradient;
-        this.ctx.fill();
-        this.ctx.strokeStyle = '#FF1493';
-        this.ctx.lineWidth = 6;
-        this.ctx.stroke();
-        
-        // Draw message
-        this.ctx.fillStyle = '#8A2BE2';
-        this.ctx.font = 'bold 24px Dancing Script';
-        this.ctx.textAlign = 'center';
-        this.ctx.fillText('Agrega opciones', centerX, centerY - 10);
-        this.ctx.fillText('románticas 💕', centerX, centerY + 20);
-        
-        // Draw center jewel
-        this.ctx.beginPath();
-        this.ctx.arc(centerX, centerY, 45, 0, 2 * Math.PI);
-        this.ctx.fillStyle = '#FFD700';
-        this.ctx.fill();
-        this.ctx.strokeStyle = '#FFFFFF';
-        this.ctx.lineWidth = 4;
-        this.ctx.stroke();
-        this.ctx.font = '32px Arial';
-        this.ctx.fillText('👑', centerX, centerY);
-    }
+.options-header {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    align-items: center;
+    flex-wrap: wrap;
+}
 
-    spinWheel() {
-        if (this.isSpinning || this.options.length < 2) return;
-        
-        this.isSpinning = true;
-        const spinBtn = document.getElementById('spin-btn');
-        spinBtn.disabled = true;
-        spinBtn.textContent = '🎯 Girando... 💫';
-        
-        // Create spinning effect
-        this.createSpinParticles();
-        
-        // Add pointer animation
-        const pointer = document.querySelector('.wheel-pointer');
-        pointer.classList.add('spinning');
-        
-        // Calculate random result
-        const segments = this.options.length;
-        const segmentAngle = 360 / segments;
-        const randomSpins = 8 + Math.random() * 4; // More spins
-        const randomSegment = Math.floor(Math.random() * segments);
-        const finalRotation = 360 * randomSpins + (360 - randomSegment * segmentAngle - segmentAngle / 2);
-        // Draw segments
-            
-            // Smooth easing function - gradual deceleration
-            const easeOut = 1 - Math.pow(1 - progress, 3.5);
-            const color = colors[i % colors.length];
-            this.rotation = startRotation + (finalRotation - startRotation) * easeOut;
-            // Draw segment
-            
-            // Add tick sound effect when crossing segments
-            const currentSegment = Math.floor(((360 - (this.rotation % 360)) / segmentAngle)) % segments;
-            if (currentSegment !== lastSegment && progress > 0.15 && progress < 0.9) {
-        
-        animate();
-    }
+#option-input {
+    flex: 1;
+    min-width: 200px;
+    padding: 12px 15px;
+    border: 2px solid #000000;
+    border-radius: 10px;
+    font-size: 1rem;
+    outline: none;
+    transition: all 0.3s ease;
+}
 
-    showResult(segmentIndex) {
-        const result = this.options[segmentIndex];
-        const modal = document.getElementById('result-modal');
-        const resultText = document.getElementById('result-text');
-        
-        resultText.textContent = result;
-        modal.classList.add('show');
-        
-        // Create celebration particles
-        this.createCelebrationEffect();
-        
-        // Play romantic sound (if available)
-        this.playRomanticSound();
-    }
+#option-input:focus {
+    border-color: #e30052;
+    box-shadow: 0 0 10px rgba(227, 0, 82, 0.3);
+}
 
-    closeModal() {
-        const modal = document.getElementById('result-modal');
-        modal.classList.remove('show');
-    }
+.btn {
+    padding: 12px 20px;
+    border: 2px solid #000000;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    background: #ffffff;
+    color: #000000;
+    font-weight: bold;
+}
 
-    saveWheel() {
-        if (this.options.length < 2) {
-            alert('Agrega al menos 2 opciones para guardar la ruleta 💕');
-            return;
-        }
-        
-        const name = prompt('¿Cómo quieres llamar a tu ruleta romántica? 💗');
-        if (!name) return;
-        
-        const wheel = {
-            id: Date.now(),
-            name: name,
-            type: this.wheelType,
-            options: [...this.options],
-            createdAt: new Date().toLocaleDateString()
-        };
-        
-        this.savedWheels.push(wheel);
-        localStorage.setItem('romanticWheels', JSON.stringify(this.savedWheels));
-        this.loadSavedWheels();
-        
-        alert('¡Ruleta guardada con amor! 💕✨');
-        this.createParticleEffect('💾');
-    }
+.btn:hover {
+    background: #000000;
+    color: #ffffff;
+}
 
-    loadSavedWheels() {
-        const grid = document.getElementById('wheels-grid');
-        grid.innerHTML = '';
-        
-        if (this.savedWheels.length === 0) {
-            grid.innerHTML = '<p style="text-align: center; color: #666; font-style: italic;">No tienes ruletas guardadas aún 💔</p>';
-            return;
-        }
-        
-        this.savedWheels.forEach(wheel => {
-            const card = document.createElement('div');
-            card.className = 'saved-wheel-card fade-in';
-            
-            const typeEmoji = wheel.type === 'mystery' ? '🎁' : wheel.type === 'surprise' ? '💗' : '🎀';
-            
-            card.innerHTML = `
-                <div class="saved-wheel-title">${typeEmoji} ${wheel.name}</div>
-                <div class="saved-wheel-info">${wheel.options.length} opciones • ${wheel.createdAt}</div>
-                <div class="saved-wheel-actions">
-                    <button class="load-wheel-btn" onclick="roulette.loadWheel(${wheel.id})">Cargar ✨</button>
-                    <button class="delete-wheel-btn" onclick="roulette.deleteWheel(${wheel.id})">Eliminar 🗑️</button>
-                </div>
-            `;
-            
-            grid.appendChild(card);
-        });
-    }
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
 
-    loadWheel(wheelId) {
-        const wheel = this.savedWheels.find(w => w.id === wheelId);
-        if (!wheel) return;
-        
-        this.selectWheelType(wheel.type);
-        this.options = [...wheel.options];
-        this.updateDisplay();
-        this.drawWheel();
-        
-        this.createParticleEffect('💕');
-    }
+.btn:disabled:hover {
+    background: #ffffff;
+    color: #000000;
+}
 
-    deleteWheel(wheelId) {
-        if (!confirm('¿Estás seguro de que quieres eliminar esta ruleta? 💔')) return;
-        
-        this.savedWheels = this.savedWheels.filter(w => w.id !== wheelId);
-        localStorage.setItem('romanticWheels', JSON.stringify(this.savedWheels));
-        this.loadSavedWheels();
-        
-        this.createParticleEffect('💔');
-    }
+.btn-primary {
+    background: #e30052;
+    color: #ffffff;
+    border-color: #000000;
+}
 
-    showWheelSelection() {
-        document.getElementById('wheel-selection').classList.remove('hidden');
-        document.getElementById('wheel-creator').classList.add('hidden');
-        this.wheelType = null;
-        this.options = [];
-    }
+.btn-primary:hover {
+    background: #000000;
+    color: #ffffff;
+}
 
-    // Particle System
-    startParticleSystem() {
-        setInterval(() => {
-            this.createRandomParticle();
-        }, 2000);
-    }
+.btn-success {
+    background: #28a745;
+    color: #ffffff;
+    border-color: #000000;
+}
 
-    createRandomParticle() {
-        const particles = ['💕', '✨', '💗', '🌟', '❤️', '💎'];
-        const particle = particles[Math.floor(Math.random() * particles.length)];
-        this.createParticleEffect(particle);
-    }
+.btn-success:hover {
+    background: #000000;
+    color: #ffffff;
+}
 
-    createParticleEffect(emoji) {
-        const particle = document.createElement('div');
-        particle.className = 'particle';
-        particle.textContent = emoji;
-        particle.style.left = Math.random() * 100 + '%';
-        particle.style.animationDelay = Math.random() * 2 + 's';
-        particle.style.animationDuration = (4 + Math.random() * 4) + 's';
-        
-        document.getElementById('particles').appendChild(particle);
-        
-        setTimeout(() => {
-            particle.remove();
-        }, 8000);
-    }
+/* === OPTIONS LIST === */
+.options-list {
+    max-height: 400px;
+    overflow-y: auto;
+    margin: 20px 0;
+}
 
-    createSpinParticles() {
-        const spinParticles = ['💫', '⭐', '✨', '🌟', '💥'];
-        for (let i = 0; i < 10; i++) {
-            setTimeout(() => {
-                const particle = spinParticles[Math.floor(Math.random() * spinParticles.length)];
-                this.createParticleEffect(particle);
-            }, i * 100);
-        }
-    }
+.option-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    margin: 10px 0;
+    background: #ffffff;
+    border: 2px solid #000000;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+}
 
-    createCelebrationEffect() {
-        const celebrationParticles = ['🎉', '🎊', '💕', '✨', '🌟', '💗', '❤️', '💎'];
-        for (let i = 0; i < 20; i++) {
-            setTimeout(() => {
-                const particle = celebrationParticles[Math.floor(Math.random() * celebrationParticles.length)];
-                this.createParticleEffect(particle);
-            }, i * 50);
-        }
-    }
-
-    shuffleArray(array) {
-        const shuffled = [...array];
-        for (let i = shuffled.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-        }
-        return shuffled;
-    }
-
-    playRomanticSound() {
-        // Create a simple romantic tone using Web Audio API
-        try {
-            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            
-            // Create a sweet romantic melody
-            const frequencies = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
-            
-            frequencies.forEach((freq, index) => {
-                const oscillator = audioContext.createOscillator();
-                const gainNode = audioContext.createGain();
-                
-                oscillator.connect(gainNode);
-                gainNode.connect(audioContext.destination);
-                
-                oscillator.frequency.setValueAtTime(freq, audioContext.currentTime);
-                oscillator.type = 'sine';
-                
-                gainNode.gain.setValueAtTime(0, audioContext.currentTime);
-                gainNode.gain.linearRampToValueAtTime(0.1, audioContext.currentTime + 0.01);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3 + index * 0.1);
-                
-                oscillator.start(audioContext.currentTime + index * 0.1);
-                oscillator.stop(audioContext.currentTime + 0.4 + index * 0.1);
-            });
-        } catch (error) {
-            console.log('Audio not supported');
-        }
-    }
-    
-    playTickSound() {
-        try {
-            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            const oscillator = audioContext.createOscillator();
-            const gainNode = audioContext.createGain();
-            
-            oscillator.connect(gainNode);
-            gainNode.connect(audioContext.destination);
-            
-            oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
-            oscillator.type = 'square';
-            
-            gainNode.gain.setValueAtTime(0, audioContext.currentTime);
-            gainNode.gain.linearRampToValueAtTime(0.1, audioContext.currentTime + 0.01);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
-            
-    transition: color 0.3s ease;
+.option-item:hover {
+    background: #e30052;
+    color: #ffffff;
 }
 
 .option-item:hover .option-text {
     color: #ffffff;
-            oscillator.start(audioContext.currentTime);
-            oscillator.stop(audioContext.currentTime + 0.1);
-        } catch (error) {
+}
+
+.option-text {
+    flex: 1;
+    font-size: 1rem;
+    color: #000000;
+    transition: color 0.3s ease;
+}
+
+.remove-option {
     background: #000000;
     color: #ffffff;
     border: 2px solid #e30052;
-    
-    highlightCurrentSegment(segmentIndex) {
-        // Add visual highlight effect
-        this.currentHighlight = segmentIndex;
-        setTimeout(() => {
-            this.currentHighlight = null;
-        }, 150);
+    padding: 8px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+}
+
+.remove-option:hover {
+    background: #e30052;
+    color: #ffffff;
     border-color: #000000;
     background: #e30052;
     color: #ffffff;
 }
 
-// Initialize the application
-let roulette;
+/* === ACTIONS === */
+.wheel-actions {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin: 25px 0;
+    flex-wrap: wrap;
+}
+
+/* === SAVED WHEELS === */
+#wheels-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.saved-wheel-card {
+    background: #ffffff;
+    border: 3px solid #000000;
+    border-radius: 15px;
+    padding: 20px;
+    transition: all 0.3s ease;
+}
+
+.saved-wheel-card:hover {
+    background: #e30052;
+    color: #ffffff;
+}
+
+.saved-wheel-title {
+    font-size: 1.3rem;
+    font-weight: bold;
+    margin-bottom: 10px;
+    color: inherit;
+}
+
+.saved-wheel-info {
+    font-size: 0.9rem;
+    opacity: 0.7;
+    margin-bottom: 15px;
+    color: inherit;
+}
+
+.saved-wheel-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.load-wheel-btn, .delete-wheel-btn {
+    flex: 1;
+    padding: 8px 16px;
+    border: 2px solid #000000;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+    background: #ffffff;
     color: #000000;
-    roulette = new RomanticRoulette();
-});
+}
+
+.load-wheel-btn:hover {
+    background: #000000;
+    color: #ffffff;
+}
+
+.delete-wheel-btn:hover {
+    background: #e30052;
+    color: #ffffff;
+}
+
+/* === MODAL === */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal.show {
+    display: flex;
+}
+
+.modal-content {
+    background: #ffffff;
+    border: 5px solid #000000;
+    border-radius: 20px;
+    padding: 40px;
+    text-align: center;
+    max-width: 500px;
+    width: 90%;
+    box-shadow: 0 10px 50px rgba(0, 0, 0, 0.5);
+    animation: modalAppear 0.3s ease-out;
+}
+
+@keyframes modalAppear {
+    from { 
+        opacity: 0;
+        transform: scale(0.8);
+    }
+    to { 
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.modal h2 {
+    color: #e30052;
+    font-size: 2rem;
+    margin-bottom: 20px;
+}
+
+#result-text {
+    font-size: 1.5rem;
+    color: #000000;
+    margin: 20px 0;
+    padding: 20px;
+    background: linear-gradient(135deg, #ffffff 0%, #ffeeee 100%);
+    border: 2px solid #e30052;
+    border-radius: 15px;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin-top: 25px;
+}
+
+/* === PARTICLES === */
+#particles {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 999;
+}
+
+.particle {
+    position: absolute;
+    font-size: 2rem;
+    animation: float 6s linear infinite;
+    opacity: 0.8;
+}
+
+@keyframes float {
+    0% {
+        transform: translateY(100vh) rotate(0deg);
+        opacity: 0;
+    }
+    10% {
+        opacity: 0.8;
+    }
+    90% {
+        opacity: 0.8;
+    }
+    100% {
+        transform: translateY(-100px) rotate(360deg);
+        opacity: 0;
+    }
+}
+
+/* === ANIMATIONS === */
+.fade-in {
+    animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* === RESPONSIVE === */
+@media (max-width: 768px) {
+    .container {
+        padding: 10px;
+    }
+    
+    .wheel-container {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .options-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    #option-input {
+        min-width: unset;
+        margin-bottom: 10px;
+    }
+    
+    .wheel-actions {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .btn {
+        width: 100%;
+        max-width: 300px;
+    }
+    
+    .modal-content {
+        padding: 20px;
+        margin: 20px;
+    }
+    
+    #result-text {
+        font-size: 1.2rem;
+    }
+    
+    .wheel-pointer {
+        font-size: 4rem;
+    }
+    
+    #wheel-canvas {
+        width: 400px !important;
+        height: 400px !important;
+    }
+}
+
+@media (max-width: 480px) {
+    header h1 {
+        font-size: 2rem;
+    }
+    
+    header p {
+        font-size: 1rem;
+    }
+    
+    .wheel-pointer {
+        font-size: 3rem;
+    }
+    
+    #wheel-canvas {
+        width: 350px !important;
+        height: 350px !important;
+    }
+}
+
+/* === CANVAS RESPONSIVE === */
+@media (min-width: 1400px) {
+    #wheel-canvas {
+        width: 700px !important;
+        height: 700px !important;
+    }
+}
+
+@media (min-width: 1200px) and (max-width: 1399px) {
+    #wheel-canvas {
+        width: 650px !important;
+        height: 650px !important;
+    }
+}
+
+@media (min-width: 992px) and (max-width: 1199px) {
+    #wheel-canvas {
+        width: 600px !important;
+        height: 600px !important;
+    }
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+    #wheel-canvas {
+        width: 480px !important;
+        height: 480px !important;
+    }
+}
