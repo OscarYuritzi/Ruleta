@@ -145,9 +145,6 @@ async function connectCouple() {
         // Setup realtime subscription
         await setupRealtimeSubscription();
         
-        // Small delay to ensure subscription is active
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
         // Check for existing partners and notify
         await checkExistingPartners();
         
