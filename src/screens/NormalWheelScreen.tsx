@@ -15,7 +15,7 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import SynchronizedWheel from '../components/SynchronizedWheel';
 import ResultModal from '../components/ResultModal';
 import FloatingParticles from '../components/FloatingParticles';
-import { firebaseService, CoupleSession } from '../services/firebaseService';
+import { dualDatabaseService, CoupleSession } from '../services/dualDatabaseService';
 import { supabaseService } from '../services/supabaseService';
 
 const NormalWheelScreen = () => {
@@ -57,7 +57,7 @@ const NormalWheelScreen = () => {
     try {
       setConnectionStatus(`Connecting with ${useSupabase ? 'Supabase' : 'Firebase'}...`);
       
-      const service = useSupabase ? supabaseService : firebaseService;
+      const service = useSupabase ? supabaseService : dualDatabaseService;
       
       // Create or join session
       const newSession = await service.createOrJoinSession(userName, coupleName);
@@ -137,7 +137,7 @@ const NormalWheelScreen = () => {
     try {
       console.log('🎯 Starting synchronized spin...');
       
-      const service = useSupabase ? supabaseService : firebaseService;
+      const service = useSupabase ? supabaseService : dualDatabaseService;
       const spins = 5 + Math.random() * 5;
       const targetRotation = spins * 2 * Math.PI + Math.random() * 2 * Math.PI;
       
@@ -191,7 +191,7 @@ const NormalWheelScreen = () => {
 
     // Sync with database
     try {
-      const service = useSupabase ? supabaseService : firebaseService;
+      const service = useSupabase ? supabaseService : dualDatabaseService;
       await service.updateWheel(coupleName, 'normal', updatedOptions);
     } catch (error) {
       console.error('Error updating options:', error);
@@ -209,7 +209,7 @@ const NormalWheelScreen = () => {
 
     // Sync with database
     try {
-      const service = useSupabase ? supabaseService : firebaseService;
+      const service = useSupabase ? supabaseService : dualDatabaseService;
       await service.updateWheel(coupleName, 'normal', updatedOptions);
     } catch (error) {
       console.error('Error updating options:', error);

@@ -14,7 +14,7 @@ import SynchronizedWheel from '../components/SynchronizedWheel';
 import ResultModal from '../components/ResultModal';
 import FloatingParticles from '../components/FloatingParticles';
 import { firebaseService, CoupleSession } from '../services/firebaseService';
-import { supabaseService } from '../services/supabaseService';
+import { dualDatabaseService } from '../services/dualDatabaseService';
 
 const MysteryWheelScreen = () => {
   const navigation = useNavigation();
@@ -52,7 +52,7 @@ const MysteryWheelScreen = () => {
     try {
       setConnectionStatus(`Conectando con ${useSupabase ? 'Supabase' : 'Firebase'}...`);
       
-      const service = useSupabase ? supabaseService : firebaseService;
+      const service = useSupabase ? dualDatabaseService : firebaseService;
       
       // Crear o unirse a la sesión
       const newSession = await service.createOrJoinSession(userName, coupleName);
@@ -125,7 +125,7 @@ const MysteryWheelScreen = () => {
     try {
       console.log('🎯 Iniciando giro sincronizado...');
       
-      const service = useSupabase ? supabaseService : firebaseService;
+      const service = useSupabase ? dualDatabaseService : firebaseService;
       const spins = 5 + Math.random() * 5;
       const targetRotation = spins * 2 * Math.PI + Math.random() * 2 * Math.PI;
       
@@ -150,7 +150,7 @@ const MysteryWheelScreen = () => {
   };
 
   const handleBackPress = () => {
-    const service = useSupabase ? supabaseService : firebaseService;
+    const service = useSupabase ? dualDatabaseService : firebaseService;
     service.cleanup();
     navigation.goBack();
     return true;

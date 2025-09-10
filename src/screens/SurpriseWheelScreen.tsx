@@ -15,6 +15,7 @@ import ResultModal from '../components/ResultModal';
 import FloatingParticles from '../components/FloatingParticles';
 import { firebaseService, CoupleSession } from '../services/firebaseService';
 import { supabaseService } from '../services/supabaseService';
+import { dualDatabaseService } from '../services/dualDatabaseService';
 
 const SurpriseWheelScreen = () => {
   const navigation = useNavigation();
