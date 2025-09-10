@@ -4,7 +4,7 @@ import { supabaseService } from './supabaseService';
 export interface User {
   id: string;
   email: string;
-  username: string;
+  displayName?: string;
 }
 
 export interface CoupleSession {
@@ -19,6 +19,7 @@ export interface CoupleSession {
   spin_start_time?: Date;
   last_result?: string;
   result_for_user?: string;
+  last_spinner?: string;
   created_at: Date;
   updated_at: Date;
 }
@@ -27,16 +28,25 @@ class DualDatabaseService {
   // Autenticación - Se ejecuta en ambas bases de datos
   async registerUser(email: string, password: string, username: string): Promise<User> {
     try {
-      // Registrar en Firebase
-      const firebaseUser = await firebaseService.registerUser(email, password, username);
+      console.log('🔄 Registrando usuario en ambas bases de datos...');
       
-      // Registrar en Supabase
-      const supabaseUser = await supabaseService.registerUser(email, password, username);
+      // Registrar en Firebase (principal)
+      const firebaseUser = await firebaseService.signUp(email, password, username);
       
-      console.log('✅ Usuario registrado en Firebase y Supabase');
+      // Registrar en Supabase (backup)
+      try {
+        await supabaseService.signUp(email, password, username);
+        console.log('✅ Usuario registrado en Firebase y Supabase');
+      } catch (supabaseError) {
+        console.log('⚠️ Error registrando en Supabase, pero Firebase exitoso');
+      }
       
       // Retornar el usuario de Firebase como principal
-      return firebaseUser;
+      return {
+        id: firebaseUser.uid,
+        email: firebaseUser.email || email,
+        displayName: firebaseUser.displayName || username,
+      };
     } catch (error) {
       console.error('❌ Error registrando usuario:', error);
       throw error;
@@ -45,18 +55,24 @@ class DualDatabaseService {
 
   async loginUser(email: string, password: string): Promise<User> {
     try {
-      // Login en Firebase
-      const firebaseUser = await firebaseService.loginUser(email, password);
+      console.log('🔄 Iniciando sesión en ambas bases de datos...');
       
-      // Login en Supabase
+      // Login en Firebase (principal)
+      const firebaseUser = await firebaseService.signIn(email, password);
+      
+      // Login en Supabase (backup)
       try {
-        await supabaseService.loginUser(email, password);
+        await supabaseService.signIn(email, password);
         console.log('✅ Login exitoso en Firebase y Supabase');
       } catch (supabaseError) {
         console.log('⚠️ Login en Supabase falló, pero Firebase exitoso');
       }
       
-      return firebaseUser;
+      return {
+        id: firebaseUser.uid,
+        email: firebaseUser.email || email,
+        displayName: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'Usuario',
+      };
     } catch (error) {
       console.error('❌ Error en login:', error);
       throw error;
@@ -64,72 +80,87 @@ class DualDatabaseService {
   }
 
   // Sesiones de pareja - Se sincronizan en ambas bases de datos
-  async createCoupleSession(coupleName: string, userName: string): Promise<CoupleSession> {
+  async createOrJoinSession(userName: string, coupleName: string): Promise<CoupleSession> {
     try {
-      // Crear en Firebase
-      const firebaseSession = await firebaseService.createCoupleSession(coupleName, userName);
+      console.log('🔄 Creando/uniendo sesión en ambas bases de datos...');
       
-      // Crear en Supabase
+      // Crear/unir en Firebase (principal)
+      const firebaseSession = await firebaseService.createOrJoinSession(userName, coupleName);
+      
+      // Crear/unir en Supabase (backup)
       try {
-        await supabaseService.createCoupleSession(coupleName, userName);
-        console.log('✅ Sesión creada en Firebase y Supabase');
+        await supabaseService.createOrJoinSession(userName, coupleName);
+        console.log('✅ Sesión sincronizada en Firebase y Supabase');
       } catch (supabaseError) {
-        console.log('⚠️ Error creando en Supabase, pero Firebase exitoso');
+        console.log('⚠️ Error sincronizando en Supabase, pero Firebase exitoso');
       }
       
       return firebaseSession;
     } catch (error) {
-      console.error('❌ Error creando sesión:', error);
+      console.error('❌ Error creando/uniendo sesión:', error);
       throw error;
     }
   }
 
-  async joinCoupleSession(coupleName: string, userName: string): Promise<CoupleSession> {
+  // Actualizar configuración de ruleta
+  async updateWheel(coupleName: string, wheelType: string, options: string[]): Promise<void> {
     try {
-      // Unirse en Firebase
-      const firebaseSession = await firebaseService.joinCoupleSession(coupleName, userName);
+      console.log('🔄 Actualizando ruleta en ambas bases de datos...');
       
-      // Unirse en Supabase
+      // Actualizar en Firebase (principal)
+      await firebaseService.updateWheel(coupleName, wheelType, options);
+      
+      // Actualizar en Supabase (backup)
       try {
-        await supabaseService.joinCoupleSession(coupleName, userName);
-        console.log('✅ Unido a sesión en Firebase y Supabase');
+        await supabaseService.updateWheel(coupleName, wheelType, options);
+        console.log('✅ Ruleta actualizada en Firebase y Supabase');
       } catch (supabaseError) {
-        console.log('⚠️ Error uniéndose en Supabase, pero Firebase exitoso');
+        console.log('⚠️ Error actualizando en Supabase, pero Firebase exitoso');
       }
-      
-      return firebaseSession;
     } catch (error) {
-      console.error('❌ Error uniéndose a sesión:', error);
+      console.error('❌ Error actualizando ruleta:', error);
       throw error;
     }
   }
 
-  async updateWheelState(
-    coupleName: string,
-    wheelType: string,
-    options: string[],
-    isSpinning: boolean,
-    rotation: number,
-    result?: string,
-    resultForUser?: string
-  ): Promise<void> {
+  // Iniciar giro
+  async startSpin(coupleName: string, rotation: number, spinnerName: string): Promise<void> {
     try {
-      // Actualizar en Firebase
-      await firebaseService.updateWheelState(
-        coupleName, wheelType, options, isSpinning, rotation, result, resultForUser
-      );
+      console.log('🔄 Iniciando giro en ambas bases de datos...');
       
-      // Actualizar en Supabase
+      // Iniciar en Firebase (principal)
+      await firebaseService.startSpin(coupleName, rotation, spinnerName);
+      
+      // Iniciar en Supabase (backup)
       try {
-        await supabaseService.updateWheelState(
-          coupleName, wheelType, options, isSpinning, rotation, result, resultForUser
-        );
-        console.log('✅ Estado actualizado en Firebase y Supabase');
+        await supabaseService.startSpin(coupleName, rotation, spinnerName);
+        console.log('✅ Giro iniciado en Firebase y Supabase');
       } catch (supabaseError) {
-        console.log('⚠️ Error actualizando Supabase, pero Firebase exitoso');
+        console.log('⚠️ Error iniciando giro en Supabase, pero Firebase exitoso');
       }
     } catch (error) {
-      console.error('❌ Error actualizando estado:', error);
+      console.error('❌ Error iniciando giro:', error);
+      throw error;
+    }
+  }
+
+  // Finalizar giro
+  async endSpin(coupleName: string, result: string, resultForUser: string): Promise<void> {
+    try {
+      console.log('🔄 Finalizando giro en ambas bases de datos...');
+      
+      // Finalizar en Firebase (principal)
+      await firebaseService.endSpin(coupleName, result, resultForUser);
+      
+      // Finalizar en Supabase (backup)
+      try {
+        await supabaseService.endSpin(coupleName, result, resultForUser);
+        console.log('✅ Giro finalizado en Firebase y Supabase');
+      } catch (supabaseError) {
+        console.log('⚠️ Error finalizando giro en Supabase, pero Firebase exitoso');
+      }
+    } catch (error) {
+      console.error('❌ Error finalizando giro:', error);
       throw error;
     }
   }
@@ -139,14 +170,10 @@ class DualDatabaseService {
     return firebaseService.subscribeToSession(coupleName, callback);
   }
 
-  async getCoupleSession(coupleName: string): Promise<CoupleSession | null> {
-    try {
-      // Obtener de Firebase como principal
-      return await firebaseService.getCoupleSession(coupleName);
-    } catch (error) {
-      console.error('❌ Error obteniendo sesión:', error);
-      return null;
-    }
+  // Limpiar suscripciones
+  cleanup(): void {
+    console.log('🧹 Limpiando suscripciones');
+    firebaseService.cleanup();
   }
 }
 

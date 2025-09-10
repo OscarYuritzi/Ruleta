@@ -10,12 +10,16 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
 import FloatingParticles from '../components/FloatingParticles';
+import { RootStackParamList } from '../../App';
+
+type WheelSelectionScreenNavigationProp = StackNavigationProp<RootStackParamList, 'WheelSelection'>;
 
 const WheelSelectionScreen = () => {
-  const navigation = useNavigation();
+  const navigation = useNavigation<WheelSelectionScreenNavigationProp>();
   const route = useRoute();
-  const { userName, coupleName, useSupabase } = route.params as any;
+  const { userName, coupleName } = route.params as any;
 
   useFocusEffect(
     React.useCallback(() => {
@@ -60,7 +64,6 @@ const WheelSelectionScreen = () => {
     navigation.navigate(wheelOption.screen as never, {
       userName,
       coupleName,
-      useSupabase,
     } as never);
   };
 
@@ -119,7 +122,7 @@ const WheelSelectionScreen = () => {
           {/* Saved Wheels Option */}
           <TouchableOpacity
             style={styles.savedWheelsCard}
-            onPress={() => navigation.navigate('SavedWheels' as never, { userName, coupleName, useSupabase } as never)}
+            onPress={() => navigation.navigate('SavedWheels', { userName, coupleName })}
             activeOpacity={0.8}
           >
             <LinearGradient

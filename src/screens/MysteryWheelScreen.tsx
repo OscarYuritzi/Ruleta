@@ -10,16 +10,20 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
 import SynchronizedWheel from '../components/SynchronizedWheel';
 import ResultModal from '../components/ResultModal';
 import FloatingParticles from '../components/FloatingParticles';
-import { firebaseService, CoupleSession } from '../services/firebaseService';
 import { dualDatabaseService } from '../services/dualDatabaseService';
+import { CoupleSession } from '../services/dualDatabaseService';
+import { RootStackParamList } from '../../App';
+
+type MysteryWheelScreenNavigationProp = StackNavigationProp<RootStackParamList, 'MysteryWheel'>;
 
 const MysteryWheelScreen = () => {
-  const navigation = useNavigation();
+  const navigation = useNavigation<MysteryWheelScreenNavigationProp>();
   const route = useRoute();
-  const { userName, coupleName, useSupabase } = route.params as any;
+  const { userName, coupleName } = route.params as any;
 
   // States
   const [session, setSession] = useState<CoupleSession | null>(null);
@@ -44,30 +48,28 @@ const MysteryWheelScreen = () => {
     
     return () => {
       backHandler.remove();
-      firebaseService.cleanup();
+      dualDatabaseService.cleanup();
     };
   }, []);
 
   const initializeSession = async () => {
     try {
-      setConnectionStatus(`Conectando con ${useSupabase ? 'Supabase' : 'Firebase'}...`);
-      
-      const service = useSupabase ? dualDatabaseService : firebaseService;
+      setConnectionStatus('Conectando...');
       
       // Crear o unirse a la sesión
-      const newSession = await service.createOrJoinSession(userName, coupleName);
+      const newSession = await dualDatabaseService.createOrJoinSession(userName, coupleName);
       
       // Configurar la ruleta misteriosa
-      await service.updateWheel(coupleName, 'mystery', mysteryOptions);
+      await dualDatabaseService.updateWheel(coupleName, 'mystery', mysteryOptions);
       
       // Suscribirse a actualizaciones en tiempo real
-      service.subscribeToSession(coupleName, handleSessionUpdate);
+      dualDatabaseService.subscribeToSession(coupleName, handleSessionUpdate);
       
       setConnectionStatus('Conectado ✅');
     } catch (error) {
       console.error('Error inicializando sesión:', error);
       setConnectionStatus('Error de conexión ❌');
-      Alert.alert('Error', `No se pudo conectar con ${useSupabase ? 'Supabase' : 'Firebase'}`);
+      Alert.alert('Error', 'No se pudo conectar');
     }
   };
 
@@ -81,9 +83,9 @@ const MysteryWheelScreen = () => {
     setSession(updatedSession);
 
     // Determinar el nombre de la pareja
-    const partner = updatedSession.user1Name === userName 
-      ? updatedSession.user2Name 
-      : updatedSession.user1Name;
+    const partner = updatedSession.user1_name === userName 
+      ? updatedSession.user2_name 
+      : updatedSession.user1_name;
     
     if (partner && partner !== partnerName) {
       setPartnerName(partner);
@@ -97,21 +99,21 @@ const MysteryWheelScreen = () => {
     }
 
     // Actualizar estado de la ruleta
-    setIsSpinning(updatedSession.isSpinning);
-    setWheelRotation(updatedSession.wheelRotation);
+    setIsSpinning(updatedSession.is_spinning);
+    setWheelRotation(updatedSession.wheel_rotation);
 
     // Determinar quién está girando
-    if (updatedSession.isSpinning) {
+    if (updatedSession.is_spinning) {
       // Lógica para determinar quién inició el giro (simplificada)
-      setSpinnerName(updatedSession.lastSpinner || 'alguien');
+      setSpinnerName(updatedSession.last_spinner || 'alguien');
     } else {
       setSpinnerName(undefined);
     }
 
     // Mostrar resultado cuando termine el giro
-    if (!updatedSession.isSpinning && updatedSession.lastResult && !showResult) {
-      setCurrentResult(updatedSession.lastResult);
-      setIsMyResult(updatedSession.resultForUser === userName);
+    if (!updatedSession.is_spinning && updatedSession.last_result && !showResult) {
+      setCurrentResult(updatedSession.last_result);
+      setIsMyResult(updatedSession.result_for_user === userName);
       setShowResult(true);
     }
   };
@@ -125,12 +127,11 @@ const MysteryWheelScreen = () => {
     try {
       console.log('🎯 Iniciando giro sincronizado...');
       
-      const service = useSupabase ? dualDatabaseService : firebaseService;
       const spins = 5 + Math.random() * 5;
       const targetRotation = spins * 2 * Math.PI + Math.random() * 2 * Math.PI;
       
       // Iniciar el giro
-      await service.startSpin(coupleName, targetRotation, userName);
+      await dualDatabaseService.startSpin(coupleName, targetRotation, userName);
       
       // Calcular resultado
       setTimeout(async () => {
@@ -140,7 +141,7 @@ const MysteryWheelScreen = () => {
         const result = mysteryOptions[segmentIndex];
         
         // Finalizar el giro con resultado
-        await service.endSpin(coupleName, result, userName);
+        await dualDatabaseService.endSpin(coupleName, result, userName);
       }, 3000);
       
     } catch (error) {
@@ -150,8 +151,7 @@ const MysteryWheelScreen = () => {
   };
 
   const handleBackPress = () => {
-    const service = useSupabase ? dualDatabaseService : firebaseService;
-    service.cleanup();
+    dualDatabaseService.cleanup();
     navigation.goBack();
     return true;
   };

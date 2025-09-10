@@ -13,11 +13,15 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
 import FloatingParticles from '../components/FloatingParticles';
 import { dualDatabaseService } from '../services/dualDatabaseService';
+import { RootStackParamList } from '../../App';
+
+type AuthScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Auth'>;
 
 const AuthScreen = () => {
-  const navigation = useNavigation();
+  const navigation = useNavigation<AuthScreenNavigationProp>();
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -52,10 +56,10 @@ const AuthScreen = () => {
         console.log('✅ Login exitoso:', user);
         
         // Navegar a pantalla de conexión de pareja
-        navigation.navigate('CoupleConnection' as never, {
+        navigation.navigate('CoupleConnection', {
           userEmail: email.trim(),
           userName: user.displayName || user.email?.split('@')[0] || 'Usuario',
-        } as never);
+        });
       } else {
         // Registro
         user = await dualDatabaseService.registerUser(email.trim(), password, userName.trim());
@@ -68,10 +72,10 @@ const AuthScreen = () => {
             {
               text: 'Continuar',
               onPress: () => {
-                navigation.navigate('CoupleConnection' as never, {
+                navigation.navigate('CoupleConnection', {
                   userEmail: email.trim(),
                   userName: userName.trim(),
-                } as never);
+                });
               }
             }
           ]

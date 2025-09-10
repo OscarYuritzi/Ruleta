@@ -13,19 +13,22 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
 import FloatingParticles from '../components/FloatingParticles';
 import { dualDatabaseService } from '../services/dualDatabaseService';
-import { supabaseService } from '../services/supabaseService';
+import { RootStackParamList } from '../../App';
+
+type CoupleConnectionScreenNavigationProp = StackNavigationProp<RootStackParamList, 'CoupleConnection'>;
 
 const CoupleConnectionScreen = () => {
-  const navigation = useNavigation();
+  const navigation = useNavigation<CoupleConnectionScreenNavigationProp>();
   const [userName, setUserName] = useState('');
   const [coupleName, setCoupleName] = useState('');
   const [isConnecting, setIsConnecting] = useState(false);
   
   // Get params from navigation (from Auth screen)
   const route = useRoute();
-  const { userEmail, userName: authUserName, useSupabase } = route.params as any;
+  const { userEmail, userName: authUserName } = route.params as any;
 
   // Set initial values from auth
   React.useEffect(() => {
@@ -55,26 +58,21 @@ const CoupleConnectionScreen = () => {
     try {
       console.log(`👤 Connecting user: ${userName} with couple: ${coupleName}`);
       
-      const normalizedCoupleName = coupleName.trim();
-      const user = { username: userName.trim() };
-      const session = await dualDatabaseService.joinCoupleSession(normalizedCoupleName, user.username);
-      const service = useSupabase ? supabaseService : firebaseService;
-      const session2 = await service.createOrJoinSession(
+      const session = await dualDatabaseService.createOrJoinSession(
         userName.trim(),
         coupleName.trim()
       );
       
-      console.log(`✅ Successful connection with ${useSupabase ? 'Supabase' : 'Firebase'}:`, session);
+      console.log('✅ Successful connection:', session);
       
       // Navigate to wheel selection
       navigation.navigate('WheelSelection', {
         userEmail,
         userName: userName.trim(),
         coupleName: coupleName.trim(),
-        useSupabase,
       });
     } catch (error) {
-      console.error(`❌ Error connecting with ${useSupabase ? 'Supabase' : 'Firebase'}:`, error);
+      console.error('❌ Error connecting:', error);
       Alert.alert('❌ Error', 'Connection error. Check your connection and try again.');
     } finally {
       setIsConnecting(false);
@@ -153,7 +151,7 @@ const CoupleConnectionScreen = () => {
                 <View style={styles.databaseInfo}>
                   <Text style={styles.label}>Conectado con:</Text>
                   <Text style={styles.databaseText}>
-                    {useSupabase ? '⚡ Supabase' : '🔥 Firebase'}
+                    🔥 Firebase + ⚡ Supabase
                   </Text>
                 </View>
 
@@ -163,7 +161,7 @@ const CoupleConnectionScreen = () => {
                   disabled={isConnecting}
                 >
                   <Text style={styles.connectButtonText}>
-                    {isConnecting ? `⏳ Conectando con ${useSupabase ? 'Supabase' : 'Firebase'}...` : '💑 Conectar con mi Pareja'}
+                    {isConnecting ? '⏳ Conectando...' : '💑 Conectar con mi Pareja'}
                   </Text>
                 </TouchableOpacity>
               </View>

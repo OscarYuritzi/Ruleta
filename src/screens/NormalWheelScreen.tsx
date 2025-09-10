@@ -12,16 +12,19 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
 import SynchronizedWheel from '../components/SynchronizedWheel';
 import ResultModal from '../components/ResultModal';
 import FloatingParticles from '../components/FloatingParticles';
 import { dualDatabaseService, CoupleSession } from '../services/dualDatabaseService';
-import { supabaseService } from '../services/supabaseService';
+import { RootStackParamList } from '../../App';
+
+type NormalWheelScreenNavigationProp = StackNavigationProp<RootStackParamList, 'NormalWheel'>;
 
 const NormalWheelScreen = () => {
-  const navigation = useNavigation();
+  const navigation = useNavigation<NormalWheelScreenNavigationProp>();
   const route = useRoute();
-  const { userName, coupleName, useSupabase } = route.params as any;
+  const { userName, coupleName } = route.params as any;
 
   // States
   const [session, setSession] = useState<CoupleSession | null>(null);
@@ -55,27 +58,25 @@ const NormalWheelScreen = () => {
 
   const initializeSession = async () => {
     try {
-      setConnectionStatus(`Connecting with ${useSupabase ? 'Supabase' : 'Firebase'}...`);
-      
-      const service = useSupabase ? supabaseService : dualDatabaseService;
+      setConnectionStatus('Conectando...');
       
       // Create or join session
-      const newSession = await service.createOrJoinSession(userName, coupleName);
+      const newSession = await dualDatabaseService.createOrJoinSession(userName, coupleName);
       
       // Configure normal wheel with custom options
-      await service.updateWheel(coupleName, 'normal', customOptions);
+      await dualDatabaseService.updateWheel(coupleName, 'normal', customOptions);
       
       // Subscribe to real-time updates
-      const unsubscribe = service.subscribeToSession(coupleName, handleSessionUpdate);
+      const unsubscribe = dualDatabaseService.subscribeToSession(coupleName, handleSessionUpdate);
       
-      setConnectionStatus('Connected ✅');
+      setConnectionStatus('Conectado ✅');
       
       // Save cleanup function
       return unsubscribe;
     } catch (error) {
       console.error('Error initializing session:', error);
-      setConnectionStatus(`${useSupabase ? 'Supabase' : 'Firebase'} connection error ❌`);
-      Alert.alert('Error', `Could not connect with ${useSupabase ? 'Supabase' : 'Firebase'}`);
+      setConnectionStatus('Error de conexión ❌');
+      Alert.alert('Error', 'No se pudo conectar');
     }
   };
 
@@ -137,12 +138,11 @@ const NormalWheelScreen = () => {
     try {
       console.log('🎯 Starting synchronized spin...');
       
-      const service = useSupabase ? supabaseService : dualDatabaseService;
       const spins = 5 + Math.random() * 5;
       const targetRotation = spins * 2 * Math.PI + Math.random() * 2 * Math.PI;
       
       // Start spin
-      await service.startSpin(coupleName, targetRotation, userName);
+      await dualDatabaseService.startSpin(coupleName, targetRotation, userName);
       
       // Calculate result
       setTimeout(async () => {
@@ -152,7 +152,7 @@ const NormalWheelScreen = () => {
         const result = customOptions[segmentIndex];
         
         // End spin with result
-        await service.endSpin(coupleName, result, userName);
+        await dualDatabaseService.endSpin(coupleName, result, userName);
       }, 3000);
       
     } catch (error) {
@@ -191,8 +191,7 @@ const NormalWheelScreen = () => {
 
     // Sync with database
     try {
-      const service = useSupabase ? supabaseService : dualDatabaseService;
-      await service.updateWheel(coupleName, 'normal', updatedOptions);
+      await dualDatabaseService.updateWheel(coupleName, 'normal', updatedOptions);
     } catch (error) {
       console.error('Error updating options:', error);
     }
@@ -209,8 +208,7 @@ const NormalWheelScreen = () => {
 
     // Sync with database
     try {
-      const service = useSupabase ? supabaseService : dualDatabaseService;
-      await service.updateWheel(coupleName, 'normal', updatedOptions);
+      await dualDatabaseService.updateWheel(coupleName, 'normal', updatedOptions);
     } catch (error) {
       console.error('Error updating options:', error);
     }
