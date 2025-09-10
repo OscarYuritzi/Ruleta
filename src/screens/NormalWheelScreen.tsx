@@ -15,7 +15,7 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import SynchronizedWheel from '../components/SynchronizedWheel';
 import ResultModal from '../components/ResultModal';
 import FloatingParticles from '../components/FloatingParticles';
-import { firebaseService, CoupleSession } from '../services/firebaseService';
+import { supabaseService, CoupleSession } from '../services/supabaseService';
 
 const NormalWheelScreen = () => {
   const navigation = useNavigation();
@@ -49,28 +49,30 @@ const NormalWheelScreen = () => {
     
     return () => {
       backHandler.remove();
-      firebaseService.cleanup();
     };
   }, []);
 
   const initializeSession = async () => {
     try {
-      setConnectionStatus('Conectando con Firebase...');
+      setConnectionStatus('Conectando con Supabase...');
       
       // Crear o unirse a la sesión
-      const newSession = await firebaseService.createOrJoinSession(userName, coupleName);
+      const newSession = await supabaseService.createOrJoinSession(userName, coupleName);
       
       // Configurar la ruleta normal con opciones personalizadas
-      await firebaseService.updateWheel(coupleName, 'normal', customOptions);
+      await supabaseService.updateWheel(coupleName, 'normal', customOptions);
       
       // Suscribirse a actualizaciones en tiempo real
-      firebaseService.subscribeToSession(coupleName, handleSessionUpdate);
+      const unsubscribe = supabaseService.subscribeToSession(coupleName, handleSessionUpdate);
       
       setConnectionStatus('Conectado ✅');
+      
+      // Guardar función de limpieza
+      return unsubscribe;
     } catch (error) {
       console.error('Error inicializando sesión:', error);
       setConnectionStatus('Error de conexión ❌');
-      Alert.alert('Error', 'No se pudo conectar con Firebase');
+      Alert.alert('Error', 'No se pudo conectar con Supabase');
     }
   };
 
@@ -84,9 +86,9 @@ const NormalWheelScreen = () => {
     setSession(updatedSession);
 
     // Determinar el nombre de la pareja
-    const partner = updatedSession.user1Name === userName 
-      ? updatedSession.user2Name 
-      : updatedSession.user1Name;
+    const partner = updatedSession.user1_name === userName 
+      ? updatedSession.user2_name 
+      : updatedSession.user1_name;
     
     if (partner && partner !== partnerName) {
       setPartnerName(partner);
@@ -100,32 +102,32 @@ const NormalWheelScreen = () => {
     }
 
     // Sincronizar opciones personalizadas
-    if (updatedSession.currentOptions && updatedSession.currentOptions.length > 0) {
-      setCustomOptions(updatedSession.currentOptions);
+    if (updatedSession.current_options && updatedSession.current_options.length > 0) {
+      setCustomOptions(updatedSession.current_options);
     }
 
     // Actualizar estado de la ruleta
-    setIsSpinning(updatedSession.isSpinning);
-    setWheelRotation(updatedSession.wheelRotation);
+    setIsSpinning(updatedSession.is_spinning);
+    setWheelRotation(updatedSession.wheel_rotation);
 
     // Determinar quién está girando
-    if (updatedSession.isSpinning) {
-      setSpinnerName(updatedSession.lastSpinner || 'alguien');
+    if (updatedSession.is_spinning) {
+      setSpinnerName('alguien');
     } else {
       setSpinnerName(undefined);
     }
 
     // Mostrar resultado cuando termine el giro
-    if (!updatedSession.isSpinning && updatedSession.lastResult && !showResult) {
-      setCurrentResult(updatedSession.lastResult);
-      setIsMyResult(updatedSession.resultForUser === userName);
+    if (!updatedSession.is_spinning && updatedSession.last_result && !showResult) {
+      setCurrentResult(updatedSession.last_result);
+      setIsMyResult(updatedSession.result_for_user === userName);
       setShowResult(true);
     }
   };
 
   const handleSpin = async () => {
-    if (!isConnected || isSpinning || !session) {
-      Alert.alert('⚠️ Aviso', 'Espera a que tu pareja se conecte para girar juntos');
+    if (isSpinning) {
+      Alert.alert('⚠️ Aviso', 'La ruleta ya está girando');
       return;
     }
     
@@ -135,8 +137,8 @@ const NormalWheelScreen = () => {
       const spins = 5 + Math.random() * 5;
       const targetRotation = spins * 2 * Math.PI + Math.random() * 2 * Math.PI;
       
-      // Iniciar el giro en Firebase
-      await firebaseService.startSpin(coupleName, targetRotation, userName);
+      // Iniciar el giro en Supabase
+      await supabaseService.startSpin(coupleName, targetRotation, userName);
       
       // Calcular resultado
       setTimeout(async () => {
@@ -146,7 +148,7 @@ const NormalWheelScreen = () => {
         const result = customOptions[segmentIndex];
         
         // Finalizar el giro con resultado
-        await firebaseService.endSpin(coupleName, result, userName);
+        await supabaseService.endSpin(coupleName, result, userName);
       }, 3000);
       
     } catch (error) {
@@ -156,7 +158,6 @@ const NormalWheelScreen = () => {
   };
 
   const handleBackPress = () => {
-    firebaseService.cleanup();
     navigation.goBack();
     return true;
   };
@@ -186,7 +187,7 @@ const NormalWheelScreen = () => {
 
     // Sincronizar con Firebase
     try {
-      await firebaseService.updateWheel(coupleName, 'normal', updatedOptions);
+      await supabaseService.updateWheel(coupleName, 'normal', updatedOptions);
     } catch (error) {
       console.error('Error actualizando opciones:', error);
     }
@@ -203,7 +204,7 @@ const NormalWheelScreen = () => {
 
     // Sincronizar con Firebase
     try {
-      await firebaseService.updateWheel(coupleName, 'normal', updatedOptions);
+      await supabaseService.updateWheel(coupleName, 'normal', updatedOptions);
     } catch (error) {
       console.error('Error actualizando opciones:', error);
     }
@@ -218,7 +219,7 @@ const NormalWheelScreen = () => {
       }
       return '🎯 Girando...';
     }
-    return isConnected ? '🎯 Girar Ruleta Normal' : '⏳ Esperando pareja...';
+    return '🎯 Girar Ruleta Normal';
   };
 
   return (
