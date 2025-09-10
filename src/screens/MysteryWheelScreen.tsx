@@ -13,6 +13,7 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import SynchronizedWheel from '../components/SynchronizedWheel';
 import ResultModal from '../components/ResultModal';
 import FloatingParticles from '../components/FloatingParticles';
+import { firebaseService, CoupleSession } from '../services/firebaseService';
 
 const MysteryWheelScreen = () => {
   const navigation = useNavigation();
@@ -20,6 +21,7 @@ const MysteryWheelScreen = () => {
   const { userName, coupleName } = route.params as any;
 
   // States
+  const [session, setSession] = useState<CoupleSession | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [partnerName, setPartnerName] = useState<string | null>(null);
   const [isSpinning, setIsSpinning] = useState(false);
@@ -27,84 +29,124 @@ const MysteryWheelScreen = () => {
   const [showResult, setShowResult] = useState(false);
   const [currentResult, setCurrentResult] = useState('');
   const [isMyResult, setIsMyResult] = useState(true);
+  const [spinnerName, setSpinnerName] = useState<string | undefined>(undefined);
+  const [connectionStatus, setConnectionStatus] = useState('Conectando...');
 
   // Mystery wheel options
   const mysteryOptions = ['🎁', '💎', '🌟', '✨', '🎉', '💫', '🎊', '🎈'];
 
   useEffect(() => {
-    // Inicializar sin conexión a Supabase
-    setIsConnected(true); // Simular conexión
-    setPartnerName('Tu pareja'); // Simular pareja conectada
+    initializeSession();
     
     // Handle back button
     const backHandler = BackHandler.addEventListener('hardwareBackPress', handleBackPress);
     
     return () => {
       backHandler.remove();
+      firebaseService.cleanup();
     };
   }, []);
 
-  const handleSpinUpdate = (data: any) => {
-    console.log('🎯 Spin update:', data);
-    
-    setIsSpinning(data.isSpinning);
-    setWheelRotation(data.wheelRotation);
+  const initializeSession = async () => {
+    try {
+      setConnectionStatus('Conectando con Firebase...');
+      
+      // Crear o unirse a la sesión
+      const newSession = await firebaseService.createOrJoinSession(userName, coupleName);
+      
+      // Configurar la ruleta misteriosa
+      await firebaseService.updateWheel(coupleName, 'mystery', mysteryOptions);
+      
+      // Suscribirse a actualizaciones en tiempo real
+      firebaseService.subscribeToSession(coupleName, handleSessionUpdate);
+      
+      setConnectionStatus('Conectado ✅');
+    } catch (error) {
+      console.error('Error inicializando sesión:', error);
+      setConnectionStatus('Error de conexión ❌');
+      Alert.alert('Error', 'No se pudo conectar con Firebase');
+    }
+  };
 
-    // Show result when spin finishes
-    if (!data.isSpinning && data.result) {
-      setCurrentResult(data.result);
-      setIsMyResult(data.resultForUser === userName);
+  const handleSessionUpdate = (updatedSession: CoupleSession | null) => {
+    if (!updatedSession) {
+      setConnectionStatus('Sesión no encontrada ❌');
+      return;
+    }
+
+    console.log('🔄 Sesión actualizada:', updatedSession);
+    setSession(updatedSession);
+
+    // Determinar el nombre de la pareja
+    const partner = updatedSession.user1Name === userName 
+      ? updatedSession.user2Name 
+      : updatedSession.user1Name;
+    
+    if (partner && partner !== partnerName) {
+      setPartnerName(partner);
+      setIsConnected(true);
+      setConnectionStatus(`💕 Conectado con ${partner}`);
+      
+      // Mostrar notificación de conexión
+      if (!isConnected) {
+        Alert.alert('💕 ¡Pareja Conectada!', `${partner} se ha unido a la sesión`);
+      }
+    }
+
+    // Actualizar estado de la ruleta
+    setIsSpinning(updatedSession.isSpinning);
+    setWheelRotation(updatedSession.wheelRotation);
+
+    // Determinar quién está girando
+    if (updatedSession.isSpinning) {
+      // Lógica para determinar quién inició el giro (simplificada)
+      setSpinnerName(updatedSession.lastSpinner || 'alguien');
+    } else {
+      setSpinnerName(undefined);
+    }
+
+    // Mostrar resultado cuando termine el giro
+    if (!updatedSession.isSpinning && updatedSession.lastResult && !showResult) {
+      setCurrentResult(updatedSession.lastResult);
+      setIsMyResult(updatedSession.resultForUser === userName);
       setShowResult(true);
     }
   };
 
-  const handlePartnerConnect = (partner: string) => {
-    console.log('👥 Partner connected:', partner);
-    setPartnerName(partner);
-    setIsConnected(true);
-  };
-
-  const handlePartnerDisconnect = () => {
-    console.log('👋 Partner disconnected');
-    setPartnerName(null);
-    setIsConnected(false);
-  };
-
-  const handleWheelUpdate = (wheelType: string, options: any[]) => {
-    console.log('🔄 Wheel updated:', wheelType, options);
-    // Mystery wheel options are fixed, no need to update
-  };
-
   const handleSpin = async () => {
-    if (!isConnected || isSpinning) return;
+    if (!isConnected || isSpinning || !session) {
+      Alert.alert('⚠️ Aviso', 'Espera a que tu pareja se conecte para girar juntos');
+      return;
+    }
     
     try {
-      setIsSpinning(true);
+      console.log('🎯 Iniciando giro sincronizado...');
       
       const spins = 5 + Math.random() * 5;
       const targetRotation = spins * 2 * Math.PI + Math.random() * 2 * Math.PI;
       
-      setWheelRotation(targetRotation);
+      // Iniciar el giro en Firebase
+      await firebaseService.startSpin(coupleName, targetRotation, userName);
       
-      // Simular resultado después de 3 segundos
-      setTimeout(() => {
+      // Calcular resultado
+      setTimeout(async () => {
         const segmentAngle = (2 * Math.PI) / mysteryOptions.length;
         const normalizedAngle = (2 * Math.PI - (targetRotation % (2 * Math.PI))) % (2 * Math.PI);
         const segmentIndex = Math.floor(normalizedAngle / segmentAngle) % mysteryOptions.length;
         const result = mysteryOptions[segmentIndex];
         
-        setIsSpinning(false);
-        setCurrentResult(result);
-        setIsMyResult(true);
-        setShowResult(true);
+        // Finalizar el giro con resultado
+        await firebaseService.endSpin(coupleName, result, userName);
       }, 3000);
+      
     } catch (error) {
-      console.error('Spin error:', error);
+      console.error('Error en giro:', error);
       Alert.alert('Error', 'No se pudo girar la ruleta.');
     }
   };
 
   const handleBackPress = () => {
+    firebaseService.cleanup();
     navigation.goBack();
     return true;
   };
@@ -115,7 +157,18 @@ const MysteryWheelScreen = () => {
 
   const handleSpinAgain = () => {
     setShowResult(false);
-    // Ready for next spin
+  };
+
+  const getSpinButtonText = () => {
+    if (isSpinning) {
+      if (spinnerName === userName) {
+        return '🎯 Girando...';
+      } else if (partnerName && spinnerName) {
+        return `🎯 ${partnerName} está girando...`;
+      }
+      return '🎯 Girando...';
+    }
+    return isConnected ? '🎯 Girar Ruleta Misteriosa' : '⏳ Esperando pareja...';
   };
 
   return (
@@ -131,15 +184,20 @@ const MysteryWheelScreen = () => {
           <Text style={styles.title}>Ruleta Misteriosa 🎁</Text>
         </View>
 
+        {/* Connection Status */}
+        <View style={styles.statusContainer}>
+          <Text style={styles.statusText}>{connectionStatus}</Text>
+        </View>
+
         {/* Content */}
         <View style={styles.content}>
           {/* Mystery Description */}
           <View style={styles.descriptionContainer}>
             <Text style={styles.mysteryTitle}>🎁 Ruleta Misteriosa 🎁</Text>
             <Text style={styles.description}>
-              ¡Las sorpresas se revelan solo al girar! 
+              ¡Las sorpresas se revelan solo al girar!
               {isConnected && partnerName && (
-                `\n\n💕 Sincronizada con ${partnerName}`
+                `\n\n💕 Sincronizada en tiempo real con ${partnerName}`
               )}
             </Text>
           </View>
@@ -152,7 +210,8 @@ const MysteryWheelScreen = () => {
             onSpin={handleSpin}
             canSpin={isConnected}
             partnerName={partnerName || undefined}
-            spinnerName={isSpinning ? 'me' : undefined}
+            spinnerName={spinnerName}
+            spinButtonText={getSpinButtonText()}
           />
         </View>
 
@@ -161,7 +220,6 @@ const MysteryWheelScreen = () => {
           visible={showResult}
           result={currentResult}
           isMyResult={isMyResult}
-          partnerName={partnerName || undefined}
           onClose={handleCloseResult}
           onSpinAgain={handleSpinAgain}
         />
@@ -200,6 +258,20 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#E30070',
     textAlign: 'center',
+  },
+  statusContainer: {
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    marginBottom: 10,
+  },
+  statusText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#E30070',
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+    borderRadius: 20,
   },
   content: {
     flex: 1,

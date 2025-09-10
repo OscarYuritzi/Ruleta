@@ -14,6 +14,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 import FloatingParticles from '../components/FloatingParticles';
+import { firebaseService } from '../services/firebaseService';
 
 const CoupleConnectionScreen = () => {
   const navigation = useNavigation();
@@ -42,8 +43,13 @@ const CoupleConnectionScreen = () => {
     try {
       console.log(`👤 Conectando usuario: ${userName} con pareja: ${coupleName}`);
       
-      // Simular conexión exitosa
-      console.log('✅ Conexión exitosa (sin Supabase)');
+      // Crear o unirse a la sesión usando Firebase
+      const session = await firebaseService.createOrJoinSession(
+        userName.trim(),
+        coupleName.trim()
+      );
+      
+      console.log('✅ Conexión exitosa con Firebase:', session);
       
       // Navegar a la selección de ruletas
       navigation.navigate('WheelSelection', {
@@ -51,7 +57,7 @@ const CoupleConnectionScreen = () => {
         coupleName: coupleName.trim(),
       });
     } catch (error) {
-      console.error('❌ Error general:', error);
+      console.error('❌ Error conectando con Firebase:', error);
       Alert.alert('❌ Error', 'Error conectando. Revisa tu conexión e inténtalo de nuevo.');
     } finally {
       setIsConnecting(false);
@@ -77,7 +83,7 @@ const CoupleConnectionScreen = () => {
                 🐶 Ruletas del Amor 💕✨
               </Text>
               <Text style={styles.subtitle}>
-                Conexión romántica a través de la distancia 🌟
+                Conexión romántica sincronizada en tiempo real 🌟
               </Text>
             </View>
 
@@ -86,7 +92,7 @@ const CoupleConnectionScreen = () => {
               <View style={styles.cardHeader}>
                 <Text style={styles.cardTitle}>💕 Conectar con tu Pareja</Text>
                 <Text style={styles.cardSubtitle}>
-                  Ambos deben usar el mismo <Text style={styles.bold}>Nombre de Pareja</Text> para sincronizarse
+                  Ambos deben usar el mismo <Text style={styles.bold}>Nombre de Pareja</Text> para sincronizarse en tiempo real
                 </Text>
               </View>
 
@@ -102,9 +108,7 @@ const CoupleConnectionScreen = () => {
                     maxLength={20}
                     autoCapitalize="words"
                     returnKeyType="next"
-                    onSubmitEditing={() => {
-                      // Focus next input if available
-                    }}
+                    editable={!isConnecting}
                   />
                 </View>
 
@@ -120,6 +124,7 @@ const CoupleConnectionScreen = () => {
                     autoCapitalize="words"
                     returnKeyType="done"
                     onSubmitEditing={handleConnect}
+                    editable={!isConnecting}
                   />
                 </View>
 
@@ -129,31 +134,37 @@ const CoupleConnectionScreen = () => {
                   disabled={isConnecting}
                 >
                   <Text style={styles.connectButtonText}>
-                    {isConnecting ? '⏳ Conectando...' : '💑 Conectar con mi Pareja'}
+                    {isConnecting ? '⏳ Conectando con Firebase...' : '💑 Conectar con mi Pareja'}
                   </Text>
                 </TouchableOpacity>
               </View>
 
               {/* Help Section */}
               <View style={styles.helpSection}>
-                <Text style={styles.helpTitle}>💡 ¿Cómo funciona?</Text>
+                <Text style={styles.helpTitle}>💡 ¿Cómo funciona la sincronización?</Text>
                 <View style={styles.helpList}>
                   <View style={styles.helpItem}>
-                    <Text style={styles.helpEmoji}>💕</Text>
+                    <Text style={styles.helpEmoji}>🔄</Text>
                     <Text style={styles.helpText}>
-                      <Text style={styles.bold}>Paso 1:</Text> Ambos escriben sus nombres individuales
+                      <Text style={styles.bold}>Tiempo Real:</Text> Todo se sincroniza instantáneamente
+                    </Text>
+                  </View>
+                  <View style={styles.helpItem}>
+                    <Text style={styles.helpEmoji}>🎯</Text>
+                    <Text style={styles.helpText}>
+                      <Text style={styles.bold}>Giros Compartidos:</Text> Ambos ven la misma ruleta girando
                     </Text>
                   </View>
                   <View style={styles.helpItem}>
                     <Text style={styles.helpEmoji}>💕</Text>
                     <Text style={styles.helpText}>
-                      <Text style={styles.bold}>Paso 2:</Text> Ambos escriben el MISMO nombre de pareja
+                      <Text style={styles.bold}>Notificaciones:</Text> Sabrás cuando tu pareja se conecte
                     </Text>
                   </View>
                   <View style={styles.helpItem}>
-                    <Text style={styles.helpEmoji}>💕</Text>
+                    <Text style={styles.helpEmoji}>💾</Text>
                     <Text style={styles.helpText}>
-                      <Text style={styles.bold}>Paso 3:</Text> ¡Se conectan automáticamente!
+                      <Text style={styles.bold}>Persistencia:</Text> Las sesiones se guardan automáticamente
                     </Text>
                   </View>
                 </View>

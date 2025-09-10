@@ -9,7 +9,6 @@ import {
   Text,
 } from 'react-native';
 import Svg, { Circle, Path, Text as SvgText } from 'react-native-svg';
-import { LinearGradient } from 'expo-linear-gradient';
 
 const { width: screenWidth } = Dimensions.get('window');
 const wheelSize = Math.min(screenWidth * 0.8, 300);
@@ -22,6 +21,7 @@ interface SynchronizedWheelProps {
   canSpin: boolean;
   partnerName?: string;
   spinnerName?: string;
+  spinButtonText?: string;
 }
 
 const SynchronizedWheel: React.FC<SynchronizedWheelProps> = ({
@@ -32,9 +32,11 @@ const SynchronizedWheel: React.FC<SynchronizedWheelProps> = ({
   canSpin,
   partnerName,
   spinnerName,
+  spinButtonText,
 }) => {
   const rotationAnim = useRef(new Animated.Value(0)).current;
   const pointerAnim = useRef(new Animated.Value(1)).current;
+  const wheelGlowAnim = useRef(new Animated.Value(0)).current;
   const [currentRotation, setCurrentRotation] = useState(0);
 
   // Animate wheel rotation
@@ -65,12 +67,34 @@ const SynchronizedWheel: React.FC<SynchronizedWheelProps> = ({
           }),
         ])
       ).start();
+
+      // Animate wheel glow during spin
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(wheelGlowAnim, {
+            toValue: 1,
+            duration: 500,
+            useNativeDriver: false,
+          }),
+          Animated.timing(wheelGlowAnim, {
+            toValue: 0,
+            duration: 500,
+            useNativeDriver: false,
+          }),
+        ])
+      ).start();
     } else {
-      // Stop pointer animation
+      // Stop animations
       Animated.timing(pointerAnim, {
         toValue: 1,
         duration: 200,
         useNativeDriver: true,
+      }).start();
+      
+      Animated.timing(wheelGlowAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: false,
       }).start();
       
       setCurrentRotation(wheelRotation);
@@ -130,33 +154,47 @@ const SynchronizedWheel: React.FC<SynchronizedWheelProps> = ({
           <SvgText
             x={textX}
             y={textY}
-            fontSize="14"
+            fontSize="20"
             fontWeight="bold"
             fill="#FFFFFF"
             textAnchor="middle"
             alignmentBaseline="middle"
           >
-            {option.length > 10 ? option.substring(0, 10) + '...' : option}
+            {option}
           </SvgText>
         </React.Fragment>
       );
     });
   };
 
-  const getSpinButtonText = () => {
-    if (isSpinning) {
-      if (spinnerName && partnerName) {
-        return spinnerName === 'me' ? '🎯 Girando...' : `🎯 ${partnerName} está girando...`;
-      }
-      return '🎯 Girando...';
-    }
-    return canSpin ? '🎯 Girar Ruleta' : '⏳ Esperando pareja...';
-  };
-
   const getSpinButtonStyle = () => {
     if (isSpinning) return styles.spinButtonSpinning;
     if (!canSpin) return styles.spinButtonDisabled;
     return styles.spinButton;
+  };
+
+  const getWheelContainerStyle = () => {
+    return [
+      styles.wheelContainer,
+      {
+        transform: [
+          {
+            rotate: rotationAnim.interpolate({
+              inputRange: [0, Math.PI * 2],
+              outputRange: ['0deg', '360deg'],
+            }),
+          },
+        ],
+        shadowColor: wheelGlowAnim.interpolate({
+          inputRange: [0, 1],
+          outputRange: ['rgba(0, 0, 0, 0.3)', 'rgba(255, 215, 0, 0.8)'],
+        }),
+        shadowRadius: wheelGlowAnim.interpolate({
+          inputRange: [0, 1],
+          outputRange: [8, 20],
+        }),
+      },
+    ];
   };
 
   return (
@@ -174,21 +212,7 @@ const SynchronizedWheel: React.FC<SynchronizedWheelProps> = ({
       </Animated.View>
 
       {/* Wheel */}
-      <Animated.View
-        style={[
-          styles.wheelContainer,
-          {
-            transform: [
-              {
-                rotate: rotationAnim.interpolate({
-                  inputRange: [0, Math.PI * 2],
-                  outputRange: ['0deg', '360deg'],
-                }),
-              },
-            ],
-          },
-        ]}
-      >
+      <Animated.View style={getWheelContainerStyle()}>
         <Svg width={wheelSize} height={wheelSize} style={styles.wheel}>
           <Circle
             cx={wheelSize / 2}
@@ -209,14 +233,26 @@ const SynchronizedWheel: React.FC<SynchronizedWheelProps> = ({
         disabled={!canSpin || isSpinning}
       >
         <Text style={styles.spinButtonText}>
-          {getSpinButtonText()}
+          {spinButtonText || (isSpinning ? '🎯 Girando...' : '🎯 Girar Ruleta')}
         </Text>
       </TouchableOpacity>
 
       {/* Partner Status */}
       {partnerName && (
         <View style={styles.partnerStatus}>
-          <Text style={styles.partnerText}>💕 Con: {partnerName}</Text>
+          <Text style={styles.partnerText}>💕 Sincronizado con: {partnerName}</Text>
+          {isSpinning && spinnerName && (
+            <Text style={styles.spinnerText}>
+              {spinnerName === 'me' ? '🎯 Tú estás girando' : `🎯 ${partnerName} está girando`}
+            </Text>
+          )}
+        </View>
+      )}
+
+      {/* Sync Indicator */}
+      {canSpin && (
+        <View style={styles.syncIndicator}>
+          <Text style={styles.syncText}>🔄 Sincronización Activa</Text>
         </View>
       )}
     </View>
@@ -262,6 +298,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 8,
+    marginBottom: 20,
   },
   spinButtonSpinning: {
     backgroundColor: '#FFD700',
@@ -273,12 +310,14 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 8,
+    marginBottom: 20,
   },
   spinButtonDisabled: {
     backgroundColor: '#CCCCCC',
     paddingHorizontal: 40,
     paddingVertical: 20,
     borderRadius: 25,
+    marginBottom: 20,
   },
   spinButtonText: {
     color: 'white',
@@ -287,15 +326,35 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   partnerStatus: {
-    marginTop: 20,
+    alignItems: 'center',
     paddingHorizontal: 20,
-    paddingVertical: 10,
+    paddingVertical: 15,
     backgroundColor: 'rgba(0, 0, 0, 0.8)',
     borderRadius: 20,
+    marginBottom: 10,
   },
   partnerText: {
     color: '#00D2D3',
     fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 5,
+  },
+  spinnerText: {
+    color: '#FFD700',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  syncIndicator: {
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    backgroundColor: 'rgba(0, 210, 211, 0.2)',
+    borderRadius: 15,
+    borderWidth: 1,
+    borderColor: '#00D2D3',
+  },
+  syncText: {
+    color: '#00D2D3',
+    fontSize: 12,
     fontWeight: 'bold',
   },
 });

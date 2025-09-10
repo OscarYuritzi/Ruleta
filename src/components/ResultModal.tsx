@@ -43,11 +43,15 @@ const ResultModal: React.FC<ResultModalProps> = ({
   }, [visible]);
 
   const getResultTitle = () => {
-    return '🎯 ¡Tu Resultado!';
+    return isMyResult ? '🎯 ¡Tu Resultado!' : '💕 ¡Resultado de tu Pareja!';
   };
 
   const getResultEmoji = () => {
-    return '🎉';
+    return isMyResult ? '🎉' : '💖';
+  };
+
+  const getGradientColors = () => {
+    return isMyResult ? ['#E30070', '#A0025C'] : ['#00D2D3', '#0984E3'];
   };
 
   return (
@@ -67,8 +71,7 @@ const ResultModal: React.FC<ResultModalProps> = ({
           ]}
         >
           <LinearGradient
-            colors={isMyResult ? ['#E30070', '#A0025C'] : ['#00D2D3', '#0984E3']}
-            colors={['#E30070', '#A0025C']}
+            colors={getGradientColors()}
             style={styles.modalContent}
           >
             {/* Header */}
@@ -82,6 +85,11 @@ const ResultModal: React.FC<ResultModalProps> = ({
             {/* Result Text */}
             <View style={styles.resultContainer}>
               <Text style={styles.resultText}>{result}</Text>
+            </View>
+
+            {/* Sync Indicator */}
+            <View style={styles.syncIndicator}>
+              <Text style={styles.syncText}>🔄 Resultado Sincronizado</Text>
             </View>
 
             {/* Decorative Emojis */}
@@ -147,7 +155,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
     borderRadius: 20,
     padding: 20,
-    marginBottom: 20,
+    marginBottom: 15,
     minHeight: 80,
     justifyContent: 'center',
   },
@@ -157,6 +165,18 @@ const styles = StyleSheet.create({
     color: 'white',
     textAlign: 'center',
     lineHeight: 28,
+  },
+  syncIndicator: {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 15,
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    marginBottom: 20,
+  },
+  syncText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: 'bold',
   },
   decorativeEmojis: {
     fontSize: 24,
