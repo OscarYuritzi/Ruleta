@@ -29,8 +29,18 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ff9a9e"
+      },
+      "package": "com.oscar.ruleta",
+      "versionCode": 1,
+      "googleServicesFile": "./google-services.json"
+    },
     "plugins": [
-      "expo-font"
+      "expo-font",
+      "@react-native-firebase/app"
     ]
   }
 }

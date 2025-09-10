@@ -9,12 +9,16 @@
     "web": "expo start --web"
   },
   "dependencies": {
+    "@react-native-firebase/app": "^23.3.1",
+    "@react-native-firebase/auth": "^23.3.1",
+    "@react-native-firebase/firestore": "^23.3.1",
     "@react-navigation/native": "^6.1.9",
     "@react-navigation/stack": "^6.3.20",
     "expo": "~50.0.0",
     "expo-font": "~11.10.3",
     "expo-linear-gradient": "~12.7.2",
     "expo-status-bar": "~1.11.1",
+    "firebase": "^12.2.1",
     "react": "18.2.0",
     "react-native": "0.73.6",
     "react-native-gesture-handler": "~2.14.0",
