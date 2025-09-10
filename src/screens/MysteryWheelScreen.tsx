@@ -14,11 +14,12 @@ import SynchronizedWheel from '../components/SynchronizedWheel';
 import ResultModal from '../components/ResultModal';
 import FloatingParticles from '../components/FloatingParticles';
 import { firebaseService, CoupleSession } from '../services/firebaseService';
+import { supabaseService } from '../services/supabaseService';
 
 const MysteryWheelScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
-  const { userName, coupleName } = route.params as any;
+  const { userName, coupleName, useSupabase } = route.params as any;
 
   // States
   const [session, setSession] = useState<CoupleSession | null>(null);
@@ -49,22 +50,24 @@ const MysteryWheelScreen = () => {
 
   const initializeSession = async () => {
     try {
-      setConnectionStatus('Conectando con Firebase...');
+      setConnectionStatus(`Conectando con ${useSupabase ? 'Supabase' : 'Firebase'}...`);
+      
+      const service = useSupabase ? supabaseService : firebaseService;
       
       // Crear o unirse a la sesión
-      const newSession = await firebaseService.createOrJoinSession(userName, coupleName);
+      const newSession = await service.createOrJoinSession(userName, coupleName);
       
       // Configurar la ruleta misteriosa
-      await firebaseService.updateWheel(coupleName, 'mystery', mysteryOptions);
+      await service.updateWheel(coupleName, 'mystery', mysteryOptions);
       
       // Suscribirse a actualizaciones en tiempo real
-      firebaseService.subscribeToSession(coupleName, handleSessionUpdate);
+      service.subscribeToSession(coupleName, handleSessionUpdate);
       
       setConnectionStatus('Conectado ✅');
     } catch (error) {
       console.error('Error inicializando sesión:', error);
       setConnectionStatus('Error de conexión ❌');
-      Alert.alert('Error', 'No se pudo conectar con Firebase');
+      Alert.alert('Error', `No se pudo conectar con ${useSupabase ? 'Supabase' : 'Firebase'}`);
     }
   };
 
@@ -122,11 +125,12 @@ const MysteryWheelScreen = () => {
     try {
       console.log('🎯 Iniciando giro sincronizado...');
       
+      const service = useSupabase ? supabaseService : firebaseService;
       const spins = 5 + Math.random() * 5;
       const targetRotation = spins * 2 * Math.PI + Math.random() * 2 * Math.PI;
       
-      // Iniciar el giro en Firebase
-      await firebaseService.startSpin(coupleName, targetRotation, userName);
+      // Iniciar el giro
+      await service.startSpin(coupleName, targetRotation, userName);
       
       // Calcular resultado
       setTimeout(async () => {
@@ -136,7 +140,7 @@ const MysteryWheelScreen = () => {
         const result = mysteryOptions[segmentIndex];
         
         // Finalizar el giro con resultado
-        await firebaseService.endSpin(coupleName, result, userName);
+        await service.endSpin(coupleName, result, userName);
       }, 3000);
       
     } catch (error) {
@@ -146,7 +150,8 @@ const MysteryWheelScreen = () => {
   };
 
   const handleBackPress = () => {
-    firebaseService.cleanup();
+    const service = useSupabase ? supabaseService : firebaseService;
+    service.cleanup();
     navigation.goBack();
     return true;
   };

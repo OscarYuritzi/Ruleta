@@ -15,7 +15,7 @@ import FloatingParticles from '../components/FloatingParticles';
 const WheelSelectionScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
-  const { userName, coupleName } = route.params as any;
+  const { userName, coupleName, useSupabase } = route.params as any;
 
   useFocusEffect(
     React.useCallback(() => {
@@ -60,6 +60,7 @@ const WheelSelectionScreen = () => {
     navigation.navigate(wheelOption.screen as never, {
       userName,
       coupleName,
+      useSupabase,
     } as never);
   };
 
@@ -118,7 +119,7 @@ const WheelSelectionScreen = () => {
           {/* Saved Wheels Option */}
           <TouchableOpacity
             style={styles.savedWheelsCard}
-            onPress={() => navigation.navigate('SavedWheels' as never, { userName, coupleName } as never)}
+            onPress={() => navigation.navigate('SavedWheels' as never, { userName, coupleName, useSupabase } as never)}
             activeOpacity={0.8}
           >
             <LinearGradient

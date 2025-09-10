@@ -16,11 +16,12 @@ import SynchronizedWheel from '../components/SynchronizedWheel';
 import ResultModal from '../components/ResultModal';
 import FloatingParticles from '../components/FloatingParticles';
 import { firebaseService, CoupleSession } from '../services/firebaseService';
+import { supabaseService } from '../services/supabaseService';
 
 const NormalWheelScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
-  const { userName, coupleName } = route.params as any;
+  const { userName, coupleName, useSupabase } = route.params as any;
 
   // States
   const [session, setSession] = useState<CoupleSession | null>(null);
@@ -54,16 +55,18 @@ const NormalWheelScreen = () => {
 
   const initializeSession = async () => {
     try {
-      setConnectionStatus('Connecting with Firebase...');
+      setConnectionStatus(`Connecting with ${useSupabase ? 'Supabase' : 'Firebase'}...`);
+      
+      const service = useSupabase ? supabaseService : firebaseService;
       
       // Create or join session
-      const newSession = await firebaseService.createOrJoinSession(userName, coupleName);
+      const newSession = await service.createOrJoinSession(userName, coupleName);
       
       // Configure normal wheel with custom options
-      await firebaseService.updateWheel(coupleName, 'normal', customOptions);
+      await service.updateWheel(coupleName, 'normal', customOptions);
       
       // Subscribe to real-time updates
-      const unsubscribe = firebaseService.subscribeToSession(coupleName, handleSessionUpdate);
+      const unsubscribe = service.subscribeToSession(coupleName, handleSessionUpdate);
       
       setConnectionStatus('Connected ✅');
       
@@ -71,8 +74,8 @@ const NormalWheelScreen = () => {
       return unsubscribe;
     } catch (error) {
       console.error('Error initializing session:', error);
-      setConnectionStatus('Connection error ❌');
-      Alert.alert('Error', 'Could not connect with Firebase');
+      setConnectionStatus(`${useSupabase ? 'Supabase' : 'Firebase'} connection error ❌`);
+      Alert.alert('Error', `Could not connect with ${useSupabase ? 'Supabase' : 'Firebase'}`);
     }
   };
 
@@ -134,11 +137,12 @@ const NormalWheelScreen = () => {
     try {
       console.log('🎯 Starting synchronized spin...');
       
+      const service = useSupabase ? supabaseService : firebaseService;
       const spins = 5 + Math.random() * 5;
       const targetRotation = spins * 2 * Math.PI + Math.random() * 2 * Math.PI;
       
-      // Start spin in Firebase
-      await firebaseService.startSpin(coupleName, targetRotation, userName);
+      // Start spin
+      await service.startSpin(coupleName, targetRotation, userName);
       
       // Calculate result
       setTimeout(async () => {
@@ -148,7 +152,7 @@ const NormalWheelScreen = () => {
         const result = customOptions[segmentIndex];
         
         // End spin with result
-        await firebaseService.endSpin(coupleName, result, userName);
+        await service.endSpin(coupleName, result, userName);
       }, 3000);
       
     } catch (error) {
@@ -185,9 +189,10 @@ const NormalWheelScreen = () => {
     setCustomOptions(updatedOptions);
     setNewOption('');
 
-    // Sync with Firebase
+    // Sync with database
     try {
-      await firebaseService.updateWheel(coupleName, 'normal', updatedOptions);
+      const service = useSupabase ? supabaseService : firebaseService;
+      await service.updateWheel(coupleName, 'normal', updatedOptions);
     } catch (error) {
       console.error('Error updating options:', error);
     }
@@ -202,9 +207,10 @@ const NormalWheelScreen = () => {
     const updatedOptions = customOptions.filter((_, i) => i !== index);
     setCustomOptions(updatedOptions);
 
-    // Sync with Firebase
+    // Sync with database
     try {
-      await firebaseService.updateWheel(coupleName, 'normal', updatedOptions);
+      const service = useSupabase ? supabaseService : firebaseService;
+      await service.updateWheel(coupleName, 'normal', updatedOptions);
     } catch (error) {
       console.error('Error updating options:', error);
     }

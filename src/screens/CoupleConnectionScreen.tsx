@@ -15,12 +15,14 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 import FloatingParticles from '../components/FloatingParticles';
 import { firebaseService } from '../services/firebaseService';
+import { supabaseService } from '../services/supabaseService';
 
 const CoupleConnectionScreen = () => {
   const navigation = useNavigation();
   const [userName, setUserName] = useState('');
   const [coupleName, setCoupleName] = useState('');
   const [isConnecting, setIsConnecting] = useState(false);
+  const [useSupabase, setUseSupabase] = useState(false);
 
   const handleConnect = async () => {
     if (!userName.trim() || !coupleName.trim()) {
@@ -43,21 +45,23 @@ const CoupleConnectionScreen = () => {
     try {
       console.log(`👤 Connecting user: ${userName} with couple: ${coupleName}`);
       
-      // Create or join session using Firebase
-      const session = await firebaseService.createOrJoinSession(
+      // Create or join session using Firebase or Supabase
+      const service = useSupabase ? supabaseService : firebaseService;
+      const session = await service.createOrJoinSession(
         userName.trim(),
         coupleName.trim()
       );
       
-      console.log('✅ Successful connection with Firebase:', session);
+      console.log(`✅ Successful connection with ${useSupabase ? 'Supabase' : 'Firebase'}:`, session);
       
       // Navigate to wheel selection
       navigation.navigate('WheelSelection', {
         userName: userName.trim(),
         coupleName: coupleName.trim(),
+        useSupabase,
       });
     } catch (error) {
-      console.error('❌ Error connecting with Firebase:', error);
+      console.error(`❌ Error connecting with ${useSupabase ? 'Supabase' : 'Firebase'}:`, error);
       Alert.alert('❌ Error', 'Connection error. Check your connection and try again.');
     } finally {
       setIsConnecting(false);
@@ -128,13 +132,48 @@ const CoupleConnectionScreen = () => {
                   />
                 </View>
 
+                {/* Database Selection */}
+                <View style={styles.databaseSelection}>
+                  <Text style={styles.label}>Base de Datos:</Text>
+                  <View style={styles.databaseButtons}>
+                    <TouchableOpacity
+                      style={[
+                        styles.databaseButton,
+                        !useSupabase && styles.databaseButtonActive
+                      ]}
+                      onPress={() => setUseSupabase(false)}
+                    >
+                      <Text style={[
+                        styles.databaseButtonText,
+                        !useSupabase && styles.databaseButtonTextActive
+                      ]}>
+                        🔥 Firebase
+                      </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[
+                        styles.databaseButton,
+                        useSupabase && styles.databaseButtonActive
+                      ]}
+                      onPress={() => setUseSupabase(true)}
+                    >
+                      <Text style={[
+                        styles.databaseButtonText,
+                        useSupabase && styles.databaseButtonTextActive
+                      ]}>
+                        ⚡ Supabase
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+
                 <TouchableOpacity
                   style={[styles.connectButton, isConnecting && styles.connectButtonDisabled]}
                   onPress={handleConnect}
                   disabled={isConnecting}
                 >
                   <Text style={styles.connectButtonText}>
-                    {isConnecting ? '⏳ Conectando con Supabase...' : '💑 Conectar con mi Pareja'}
+                    {isConnecting ? `⏳ Conectando con ${useSupabase ? 'Supabase' : 'Firebase'}...` : '💑 Conectar con mi Pareja'}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -146,7 +185,7 @@ const CoupleConnectionScreen = () => {
                   <View style={styles.helpItem}>
                     <Text style={styles.helpEmoji}>🔄</Text>
                     <Text style={styles.helpText}>
-                      <Text style={styles.bold}>Tiempo Real:</Text> Todo se sincroniza instantáneamente
+                      <Text style={styles.bold}>Tiempo Real:</Text> Todo se sincroniza instantáneamente con {useSupabase ? 'Supabase' : 'Firebase'}
                     </Text>
                   </View>
                   <View style={styles.helpItem}>
@@ -315,6 +354,34 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#CCC',
     lineHeight: 20,
+  },
+  databaseSelection: {
+    marginBottom: 20,
+  },
+  databaseButtons: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  databaseButton: {
+    flex: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderWidth: 2,
+    borderColor: 'rgba(227, 0, 112, 0.3)',
+    borderRadius: 15,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  databaseButtonActive: {
+    backgroundColor: 'rgba(227, 0, 112, 0.2)',
+    borderColor: '#E30070',
+  },
+  databaseButtonText: {
+    color: '#CCC',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  databaseButtonTextActive: {
+    color: '#E30070',
   },
 });
 

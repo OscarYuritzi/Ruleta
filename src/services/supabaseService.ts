@@ -242,6 +242,12 @@ class SupabaseService {
       updated_at: new Date(data.updated_at)
     };
   }
+
+  // Limpiar suscripciones
+  cleanup(): void {
+    console.log('🧹 Limpiando suscripciones de Supabase');
+    // Las suscripciones se limpian automáticamente cuando se desmontan los componentes
+  }
 }
 
 export const supabaseService = new SupabaseService();
