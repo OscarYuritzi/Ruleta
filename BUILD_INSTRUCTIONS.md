@@ -1,5 +1,18 @@
 # 🚀 Instrucciones de Compilación - Ruletas del Amor
 
+## 📁 **Estructura de Directorios Creada**
+
+```
+android/
+└── app/
+    └── src/
+        └── main/
+            └── res/
+                └── values/
+                    ├── colors.xml
+                    └── styles.xml
+```
+
 ## 📋 Problemas Resueltos
 
 ### ✅ **Configuración de Firebase Corregida**
