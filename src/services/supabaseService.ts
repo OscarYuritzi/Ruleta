@@ -17,6 +17,63 @@ export interface CoupleSession {
 }
 
 class SupabaseService {
+  // Authentication methods
+  async signUp(email: string, password: string, displayName: string): Promise<any> {
+    try {
+      console.log('⚡ Supabase: Creating user account');
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            display_name: displayName
+          }
+        }
+      });
+      
+      if (error) throw error;
+      
+      console.log('✅ User created successfully:', data.user);
+      return data.user;
+    } catch (error) {
+      console.error('❌ Error creating user:', error);
+      throw error;
+    }
+  }
+
+  async signIn(email: string, password: string): Promise<any> {
+    try {
+      console.log('⚡ Supabase: Signing in user');
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+      
+      if (error) throw error;
+      
+      console.log('✅ User signed in successfully:', data.user);
+      return data.user;
+    } catch (error) {
+      console.error('❌ Error signing in:', error);
+      throw error;
+    }
+  }
+
+  getCurrentUser(): any {
+    return supabase.auth.getUser();
+  }
+
+  async signOut(): Promise<void> {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      console.log('✅ User signed out successfully');
+    } catch (error) {
+      console.error('❌ Error signing out:', error);
+      throw error;
+    }
+  }
+
   // Crear o unirse a una sesión de pareja
   async createOrJoinSession(userName: string, coupleName: string): Promise<CoupleSession> {
     try {

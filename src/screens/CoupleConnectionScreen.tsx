@@ -22,7 +22,17 @@ const CoupleConnectionScreen = () => {
   const [userName, setUserName] = useState('');
   const [coupleName, setCoupleName] = useState('');
   const [isConnecting, setIsConnecting] = useState(false);
-  const [useSupabase, setUseSupabase] = useState(false);
+  
+  // Get params from navigation (from Auth screen)
+  const route = useRoute();
+  const { userEmail, userName: authUserName, useSupabase } = route.params as any;
+
+  // Set initial values from auth
+  React.useEffect(() => {
+    if (authUserName) {
+      setUserName(authUserName);
+    }
+  }, [authUserName]);
 
   const handleConnect = async () => {
     if (!userName.trim() || !coupleName.trim()) {
@@ -56,6 +66,7 @@ const CoupleConnectionScreen = () => {
       
       // Navigate to wheel selection
       navigation.navigate('WheelSelection', {
+        userEmail,
         userName: userName.trim(),
         coupleName: coupleName.trim(),
         useSupabase,
@@ -83,6 +94,9 @@ const CoupleConnectionScreen = () => {
           >
             {/* Header */}
             <View style={styles.header}>
+              <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+                <Text style={styles.backButtonText}>← Cerrar Sesión</Text>
+              </TouchableOpacity>
               <Text style={styles.logo}>
                 🐶 Ruletas del Amor 💕✨
               </Text>
@@ -94,6 +108,7 @@ const CoupleConnectionScreen = () => {
             {/* Connection Card */}
             <View style={styles.connectionCard}>
               <View style={styles.cardHeader}>
+                <Text style={styles.welcomeUser}>¡Hola {authUserName}! 👋</Text>
                 <Text style={styles.cardTitle}>💕 Conectar con tu Pareja</Text>
                 <Text style={styles.cardSubtitle}>
                   Ambos deben usar el mismo <Text style={styles.bold}>Nombre de Pareja</Text> para sincronizarse en tiempo real
@@ -132,39 +147,12 @@ const CoupleConnectionScreen = () => {
                   />
                 </View>
 
-                {/* Database Selection */}
-                <View style={styles.databaseSelection}>
-                  <Text style={styles.label}>Base de Datos:</Text>
-                  <View style={styles.databaseButtons}>
-                    <TouchableOpacity
-                      style={[
-                        styles.databaseButton,
-                        !useSupabase && styles.databaseButtonActive
-                      ]}
-                      onPress={() => setUseSupabase(false)}
-                    >
-                      <Text style={[
-                        styles.databaseButtonText,
-                        !useSupabase && styles.databaseButtonTextActive
-                      ]}>
-                        🔥 Firebase
-                      </Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={[
-                        styles.databaseButton,
-                        useSupabase && styles.databaseButtonActive
-                      ]}
-                      onPress={() => setUseSupabase(true)}
-                    >
-                      <Text style={[
-                        styles.databaseButtonText,
-                        useSupabase && styles.databaseButtonTextActive
-                      ]}>
-                        ⚡ Supabase
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
+                {/* Database Info */}
+                <View style={styles.databaseInfo}>
+                  <Text style={styles.label}>Conectado con:</Text>
+                  <Text style={styles.databaseText}>
+                    {useSupabase ? '⚡ Supabase' : '🔥 Firebase'}
+                  </Text>
                 </View>
 
                 <TouchableOpacity
@@ -185,7 +173,7 @@ const CoupleConnectionScreen = () => {
                   <View style={styles.helpItem}>
                     <Text style={styles.helpEmoji}>🔄</Text>
                     <Text style={styles.helpText}>
-                      <Text style={styles.bold}>Tiempo Real:</Text> Todo se sincroniza instantáneamente con {useSupabase ? 'Supabase' : 'Firebase'}
+                      <Text style={styles.bold}>Tiempo Real:</Text> Todo se sincroniza instantáneamente
                     </Text>
                   </View>
                   <View style={styles.helpItem}>
@@ -235,6 +223,7 @@ const styles = StyleSheet.create({
   header: {
     alignItems: 'center',
     marginBottom: 40,
+    justifyContent: 'center',
   },
   logo: {
     fontSize: 28,
@@ -261,6 +250,12 @@ const styles = StyleSheet.create({
   cardHeader: {
     alignItems: 'center',
     marginBottom: 30,
+  },
+  welcomeUser: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#00D2D3',
+    marginBottom: 10,
   },
   cardTitle: {
     fontSize: 24,
@@ -299,6 +294,30 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
     fontSize: 16,
     color: '#FFF',
+  backButton: {
+  databaseInfo: {
+    alignItems: 'center',
+    marginBottom: 20,
+    backgroundColor: 'rgba(227, 0, 112, 0.1)',
+    borderRadius: 15,
+    padding: 15,
+    borderWidth: 1,
+    borderColor: 'rgba(227, 0, 112, 0.3)',
+  },
+  databaseText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#E30070',
+  },
+    position: 'absolute',
+    left: 20,
+    zIndex: 1,
+  },
+  backButtonText: {
+    fontSize: 14,
+    color: '#E30070',
+    fontWeight: '600',
+  },
   },
   connectButton: {
     backgroundColor: '#E30070',
@@ -331,12 +350,11 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(227, 0, 112, 0.3)',
   },
   helpTitle: {
-    fontSize: 18,
+    fontSize: 24,
     fontWeight: 'bold',
     color: '#E30070',
     marginBottom: 15,
     textAlign: 'center',
-  },
   helpList: {
     gap: 12,
   },
@@ -354,34 +372,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#CCC',
     lineHeight: 20,
-  },
-  databaseSelection: {
-    marginBottom: 20,
-  },
-  databaseButtons: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-  databaseButton: {
-    flex: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderWidth: 2,
-    borderColor: 'rgba(227, 0, 112, 0.3)',
-    borderRadius: 15,
-    paddingVertical: 12,
-    alignItems: 'center',
-  },
-  databaseButtonActive: {
-    backgroundColor: 'rgba(227, 0, 112, 0.2)',
-    borderColor: '#E30070',
-  },
-  databaseButtonText: {
-    color: '#CCC',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  databaseButtonTextActive: {
-    color: '#E30070',
   },
 });
 

@@ -5,6 +5,7 @@ import { StatusBar } from 'expo-status-bar';
 import { Provider as PaperProvider } from 'react-native-paper';
 
 // Screens
+import AuthScreen from './src/screens/AuthScreen';
 import CoupleConnectionScreen from './src/screens/CoupleConnectionScreen';
 import WheelSelectionScreen from './src/screens/WheelSelectionScreen';
 import MysteryWheelScreen from './src/screens/MysteryWheelScreen';
@@ -14,6 +15,7 @@ import SavedWheelsScreen from './src/screens/SavedWheelsScreen';
 
 // Types
 export type RootStackParamList = {
+  Auth: undefined;
   CoupleConnection: undefined;
   WheelSelection: { userName: string; coupleName: string };
   MysteryWheel: { userName: string; coupleName: string };
@@ -30,13 +32,17 @@ export default function App() {
       <NavigationContainer>
         <StatusBar style="light" />
         <Stack.Navigator
-          initialRouteName="CoupleConnection"
+          initialRouteName="Auth"
           screenOptions={{
             headerShown: false,
             cardStyle: { backgroundColor: '#ff9a9e' },
             animationEnabled: true,
           }}
         >
+          <Stack.Screen 
+            name="Auth" 
+            component={AuthScreen} 
+          />
           <Stack.Screen 
             name="CoupleConnection" 
             component={CoupleConnectionScreen} 

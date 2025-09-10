@@ -8,7 +8,13 @@ import {
   serverTimestamp,
   Timestamp
 } from 'firebase/firestore';
-import { db } from '../config/firebase';
+import { db, auth } from '../config/firebase';
+import { 
+  createUserWithEmailAndPassword, 
+  signInWithEmailAndPassword, 
+  updateProfile,
+  User
+} from 'firebase/auth';
 
 export interface CoupleSession {
   id: string;
@@ -29,6 +35,51 @@ export interface CoupleSession {
 
 class FirebaseService {
   private unsubscribeCallbacks: Map<string, () => void> = new Map();
+
+  // Authentication methods
+  async signUp(email: string, password: string, displayName: string): Promise<User> {
+    try {
+      console.log('🔥 Firebase: Creating user account');
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      
+      // Update user profile with display name
+      await updateProfile(userCredential.user, {
+        displayName: displayName
+      });
+      
+      console.log('✅ User created successfully:', userCredential.user);
+      return userCredential.user;
+    } catch (error) {
+      console.error('❌ Error creating user:', error);
+      throw error;
+    }
+  }
+
+  async signIn(email: string, password: string): Promise<User> {
+    try {
+      console.log('🔥 Firebase: Signing in user');
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      console.log('✅ User signed in successfully:', userCredential.user);
+      return userCredential.user;
+    } catch (error) {
+      console.error('❌ Error signing in:', error);
+      throw error;
+    }
+  }
+
+  getCurrentUser(): User | null {
+    return auth.currentUser;
+  }
+
+  async signOut(): Promise<void> {
+    try {
+      await auth.signOut();
+      console.log('✅ User signed out successfully');
+    } catch (error) {
+      console.error('❌ Error signing out:', error);
+      throw error;
+    }
+  }
 
   // Create or join a couple session
   async createOrJoinSession(userName: string, coupleName: string): Promise<CoupleSession> {
