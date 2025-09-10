@@ -14,7 +14,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 import FloatingParticles from '../components/FloatingParticles';
-import { supabaseService } from '../services/supabaseService';
+import { firebaseService } from '../services/firebaseService';
 
 const CoupleConnectionScreen = () => {
   const navigation = useNavigation();
@@ -41,24 +41,24 @@ const CoupleConnectionScreen = () => {
     setIsConnecting(true);
 
     try {
-      console.log(`👤 Conectando usuario: ${userName} con pareja: ${coupleName}`);
+      console.log(`👤 Connecting user: ${userName} with couple: ${coupleName}`);
       
-      // Crear o unirse a la sesión usando Supabase
-      const session = await supabaseService.createOrJoinSession(
+      // Create or join session using Firebase
+      const session = await firebaseService.createOrJoinSession(
         userName.trim(),
         coupleName.trim()
       );
       
-      console.log('✅ Conexión exitosa con Supabase:', session);
+      console.log('✅ Successful connection with Firebase:', session);
       
-      // Navegar a la selección de ruletas
+      // Navigate to wheel selection
       navigation.navigate('WheelSelection', {
         userName: userName.trim(),
         coupleName: coupleName.trim(),
       });
     } catch (error) {
-      console.error('❌ Error conectando con Supabase:', error);
-      Alert.alert('❌ Error', 'Error conectando. Revisa tu conexión e inténtalo de nuevo.');
+      console.error('❌ Error connecting with Firebase:', error);
+      Alert.alert('❌ Error', 'Connection error. Check your connection and try again.');
     } finally {
       setIsConnecting(false);
     }

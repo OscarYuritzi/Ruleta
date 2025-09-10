@@ -15,7 +15,7 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import SynchronizedWheel from '../components/SynchronizedWheel';
 import ResultModal from '../components/ResultModal';
 import FloatingParticles from '../components/FloatingParticles';
-import { supabaseService, CoupleSession } from '../services/supabaseService';
+import { firebaseService, CoupleSession } from '../services/firebaseService';
 
 const NormalWheelScreen = () => {
   const navigation = useNavigation();
@@ -54,38 +54,38 @@ const NormalWheelScreen = () => {
 
   const initializeSession = async () => {
     try {
-      setConnectionStatus('Conectando con Supabase...');
+      setConnectionStatus('Connecting with Firebase...');
       
-      // Crear o unirse a la sesión
-      const newSession = await supabaseService.createOrJoinSession(userName, coupleName);
+      // Create or join session
+      const newSession = await firebaseService.createOrJoinSession(userName, coupleName);
       
-      // Configurar la ruleta normal con opciones personalizadas
-      await supabaseService.updateWheel(coupleName, 'normal', customOptions);
+      // Configure normal wheel with custom options
+      await firebaseService.updateWheel(coupleName, 'normal', customOptions);
       
-      // Suscribirse a actualizaciones en tiempo real
-      const unsubscribe = supabaseService.subscribeToSession(coupleName, handleSessionUpdate);
+      // Subscribe to real-time updates
+      const unsubscribe = firebaseService.subscribeToSession(coupleName, handleSessionUpdate);
       
-      setConnectionStatus('Conectado ✅');
+      setConnectionStatus('Connected ✅');
       
-      // Guardar función de limpieza
+      // Save cleanup function
       return unsubscribe;
     } catch (error) {
-      console.error('Error inicializando sesión:', error);
-      setConnectionStatus('Error de conexión ❌');
-      Alert.alert('Error', 'No se pudo conectar con Supabase');
+      console.error('Error initializing session:', error);
+      setConnectionStatus('Connection error ❌');
+      Alert.alert('Error', 'Could not connect with Firebase');
     }
   };
 
   const handleSessionUpdate = (updatedSession: CoupleSession | null) => {
     if (!updatedSession) {
-      setConnectionStatus('Sesión no encontrada ❌');
+      setConnectionStatus('Session not found ❌');
       return;
     }
 
-    console.log('🔄 Sesión actualizada:', updatedSession);
+    console.log('🔄 Session updated:', updatedSession);
     setSession(updatedSession);
 
-    // Determinar el nombre de la pareja
+    // Determine partner name
     const partner = updatedSession.user1_name === userName 
       ? updatedSession.user2_name 
       : updatedSession.user1_name;
@@ -93,31 +93,31 @@ const NormalWheelScreen = () => {
     if (partner && partner !== partnerName) {
       setPartnerName(partner);
       setIsConnected(true);
-      setConnectionStatus(`💕 Conectado con ${partner}`);
+      setConnectionStatus(`💕 Connected with ${partner}`);
       
-      // Mostrar notificación de conexión
+      // Show connection notification
       if (!isConnected) {
-        Alert.alert('💕 ¡Pareja Conectada!', `${partner} se ha unido a la sesión`);
+        Alert.alert('💕 Partner Connected!', `${partner} has joined the session`);
       }
     }
 
-    // Sincronizar opciones personalizadas
+    // Sync custom options
     if (updatedSession.current_options && updatedSession.current_options.length > 0) {
       setCustomOptions(updatedSession.current_options);
     }
 
-    // Actualizar estado de la ruleta
+    // Update wheel state
     setIsSpinning(updatedSession.is_spinning);
     setWheelRotation(updatedSession.wheel_rotation);
 
-    // Determinar quién está girando
+    // Determine who is spinning
     if (updatedSession.is_spinning) {
-      setSpinnerName('alguien');
+      setSpinnerName(updatedSession.last_spinner || 'someone');
     } else {
       setSpinnerName(undefined);
     }
 
-    // Mostrar resultado cuando termine el giro
+    // Show result when spin ends
     if (!updatedSession.is_spinning && updatedSession.last_result && !showResult) {
       setCurrentResult(updatedSession.last_result);
       setIsMyResult(updatedSession.result_for_user === userName);
@@ -127,33 +127,33 @@ const NormalWheelScreen = () => {
 
   const handleSpin = async () => {
     if (isSpinning) {
-      Alert.alert('⚠️ Aviso', 'La ruleta ya está girando');
+      Alert.alert('⚠️ Notice', 'The wheel is already spinning');
       return;
     }
     
     try {
-      console.log('🎯 Iniciando giro sincronizado...');
+      console.log('🎯 Starting synchronized spin...');
       
       const spins = 5 + Math.random() * 5;
       const targetRotation = spins * 2 * Math.PI + Math.random() * 2 * Math.PI;
       
-      // Iniciar el giro en Supabase
-      await supabaseService.startSpin(coupleName, targetRotation, userName);
+      // Start spin in Firebase
+      await firebaseService.startSpin(coupleName, targetRotation, userName);
       
-      // Calcular resultado
+      // Calculate result
       setTimeout(async () => {
         const segmentAngle = (2 * Math.PI) / customOptions.length;
         const normalizedAngle = (2 * Math.PI - (targetRotation % (2 * Math.PI))) % (2 * Math.PI);
         const segmentIndex = Math.floor(normalizedAngle / segmentAngle) % customOptions.length;
         const result = customOptions[segmentIndex];
         
-        // Finalizar el giro con resultado
-        await supabaseService.endSpin(coupleName, result, userName);
+        // End spin with result
+        await firebaseService.endSpin(coupleName, result, userName);
       }, 3000);
       
     } catch (error) {
-      console.error('Error en giro:', error);
-      Alert.alert('Error', 'No se pudo girar la ruleta.');
+      console.error('Error in spin:', error);
+      Alert.alert('Error', 'Could not spin the wheel.');
     }
   };
 
@@ -172,12 +172,12 @@ const NormalWheelScreen = () => {
 
   const addCustomOption = async () => {
     if (!newOption.trim()) {
-      Alert.alert('⚠️ Aviso', 'Escribe una opción válida');
+      Alert.alert('⚠️ Notice', 'Write a valid option');
       return;
     }
 
     if (customOptions.length >= 8) {
-      Alert.alert('⚠️ Límite', 'Máximo 8 opciones permitidas');
+      Alert.alert('⚠️ Limit', 'Maximum 8 options allowed');
       return;
     }
 
@@ -185,28 +185,28 @@ const NormalWheelScreen = () => {
     setCustomOptions(updatedOptions);
     setNewOption('');
 
-    // Sincronizar con Firebase
+    // Sync with Firebase
     try {
-      await supabaseService.updateWheel(coupleName, 'normal', updatedOptions);
+      await firebaseService.updateWheel(coupleName, 'normal', updatedOptions);
     } catch (error) {
-      console.error('Error actualizando opciones:', error);
+      console.error('Error updating options:', error);
     }
   };
 
   const removeOption = async (index: number) => {
     if (customOptions.length <= 2) {
-      Alert.alert('⚠️ Aviso', 'Mínimo 2 opciones requeridas');
+      Alert.alert('⚠️ Notice', 'Minimum 2 options required');
       return;
     }
 
     const updatedOptions = customOptions.filter((_, i) => i !== index);
     setCustomOptions(updatedOptions);
 
-    // Sincronizar con Firebase
+    // Sync with Firebase
     try {
-      await supabaseService.updateWheel(coupleName, 'normal', updatedOptions);
+      await firebaseService.updateWheel(coupleName, 'normal', updatedOptions);
     } catch (error) {
-      console.error('Error actualizando opciones:', error);
+      console.error('Error updating options:', error);
     }
   };
 
