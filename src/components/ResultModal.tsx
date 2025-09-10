@@ -16,7 +16,6 @@ interface ResultModalProps {
   visible: boolean;
   result: string;
   isMyResult: boolean;
-  partnerName?: string;
   onClose: () => void;
   onSpinAgain: () => void;
 }
@@ -25,7 +24,6 @@ const ResultModal: React.FC<ResultModalProps> = ({
   visible,
   result,
   isMyResult,
-  partnerName,
   onClose,
   onSpinAgain,
 }) => {
@@ -45,15 +43,11 @@ const ResultModal: React.FC<ResultModalProps> = ({
   }, [visible]);
 
   const getResultTitle = () => {
-    if (isMyResult) {
-      return '🎯 ¡Tu Resultado!';
-    } else {
-      return `🎁 Resultado de ${partnerName}`;
-    }
+    return '🎯 ¡Tu Resultado!';
   };
 
   const getResultEmoji = () => {
-    return isMyResult ? '🎉' : '💝';
+    return '🎉';
   };
 
   return (
@@ -74,6 +68,7 @@ const ResultModal: React.FC<ResultModalProps> = ({
         >
           <LinearGradient
             colors={isMyResult ? ['#E30070', '#A0025C'] : ['#00D2D3', '#0984E3']}
+            colors={['#E30070', '#A0025C']}
             style={styles.modalContent}
           >
             {/* Header */}
@@ -91,7 +86,7 @@ const ResultModal: React.FC<ResultModalProps> = ({
 
             {/* Decorative Emojis */}
             <Text style={styles.decorativeEmojis}>
-              {isMyResult ? '💕✨🌟💗' : '👀💖🎁✨'}
+              💕✨🌟💗
             </Text>
 
             {/* Buttons */}

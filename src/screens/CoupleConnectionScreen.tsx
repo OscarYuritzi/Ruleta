@@ -13,7 +13,6 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
-import { realtimeService } from '../services/supabaseRealtime';
 import FloatingParticles from '../components/FloatingParticles';
 
 const CoupleConnectionScreen = () => {
@@ -41,25 +40,24 @@ const CoupleConnectionScreen = () => {
     setIsConnecting(true);
 
     try {
-      console.log(`👤 Conectando usuario: ${userName} con pareja: ${coupleName}`);
+      console.log(`👤 Usuario: ${userName} - Pareja: ${coupleName}`);
       
-      const success = await realtimeService.connectCouple(userName.trim(), coupleName.trim());
-      
-      if (success) {
-        console.log('✅ Conexión exitosa');
+      // Simular conexión exitosa
+      setTimeout(() => {
+        console.log('✅ Conexión simulada exitosa');
         
         // Navegar a la selección de ruletas
         navigation.navigate('WheelSelection', {
           userName: userName.trim(),
           coupleName: coupleName.trim(),
         });
-      } else {
-        Alert.alert('❌ Error', 'No se pudo conectar. Inténtalo de nuevo.');
-      }
+        
+        setIsConnecting(false);
+      }, 1500);
+      
     } catch (error) {
       console.error('❌ Error general:', error);
-      Alert.alert('❌ Error', 'Error conectando. Revisa tu conexión e inténtalo de nuevo.');
-    } finally {
+      Alert.alert('❌ Error', 'Error conectando. Inténtalo de nuevo.');
       setIsConnecting(false);
     }
   };
@@ -83,16 +81,16 @@ const CoupleConnectionScreen = () => {
                 🐶 Ruletas del Amor 💕✨
               </Text>
               <Text style={styles.subtitle}>
-                Conexión romántica a través de la distancia 🌟
+                Diversión romántica para parejas 🌟
               </Text>
             </View>
 
             {/* Connection Card */}
             <View style={styles.connectionCard}>
               <View style={styles.cardHeader}>
-                <Text style={styles.cardTitle}>💕 Conectar con tu Pareja</Text>
+                <Text style={styles.cardTitle}>💕 Información de Pareja</Text>
                 <Text style={styles.cardSubtitle}>
-                  Ambos deben usar el mismo <Text style={styles.bold}>Nombre de Pareja</Text> para sincronizarse
+                  Ingresa tu información para comenzar
                 </Text>
               </View>
 
@@ -108,17 +106,14 @@ const CoupleConnectionScreen = () => {
                     maxLength={20}
                     autoCapitalize="words"
                     returnKeyType="next"
-                    onSubmitEditing={() => {
-                      // Focus next input if available
-                    }}
                   />
                 </View>
 
                 <View style={styles.inputGroup}>
-                  <Text style={styles.label}>Nombre de Pareja (ambos deben usarlo):</Text>
+                  <Text style={styles.label}>Nombre de tu Pareja:</Text>
                   <TextInput
                     style={styles.input}
-                    placeholder="Ej: MariaYJuan, AmorEterno..."
+                    placeholder="Ej: Ana, Carlos..."
                     placeholderTextColor="#999"
                     value={coupleName}
                     onChangeText={setCoupleName}
@@ -135,31 +130,31 @@ const CoupleConnectionScreen = () => {
                   disabled={isConnecting}
                 >
                   <Text style={styles.connectButtonText}>
-                    {isConnecting ? '⏳ Conectando...' : '💑 Conectar con mi Pareja'}
+                    {isConnecting ? '⏳ Iniciando...' : '💑 Comenzar'}
                   </Text>
                 </TouchableOpacity>
               </View>
 
               {/* Help Section */}
               <View style={styles.helpSection}>
-                <Text style={styles.helpTitle}>💡 ¿Cómo funciona?</Text>
+                <Text style={styles.helpTitle}>💡 ¿Qué puedes hacer?</Text>
                 <View style={styles.helpList}>
                   <View style={styles.helpItem}>
-                    <Text style={styles.helpEmoji}>💕</Text>
+                    <Text style={styles.helpEmoji}>🎁</Text>
                     <Text style={styles.helpText}>
-                      <Text style={styles.bold}>Paso 1:</Text> Ambos escriben sus nombres individuales
+                      <Text style={styles.bold}>Ruleta Misteriosa:</Text> Sorpresas ocultas
                     </Text>
                   </View>
                   <View style={styles.helpItem}>
-                    <Text style={styles.helpEmoji}>💕</Text>
+                    <Text style={styles.helpEmoji}>🎀</Text>
                     <Text style={styles.helpText}>
-                      <Text style={styles.bold}>Paso 2:</Text> Ambos escriben el MISMO nombre de pareja
+                      <Text style={styles.bold}>Ruleta Normal:</Text> Crea opciones personalizadas
                     </Text>
                   </View>
                   <View style={styles.helpItem}>
-                    <Text style={styles.helpEmoji}>💕</Text>
+                    <Text style={styles.helpEmoji}>💗</Text>
                     <Text style={styles.helpText}>
-                      <Text style={styles.bold}>Paso 3:</Text> ¡Se conectan automáticamente!
+                      <Text style={styles.bold}>Ruleta Sorpresa:</Text> Actividades románticas
                     </Text>
                   </View>
                 </View>

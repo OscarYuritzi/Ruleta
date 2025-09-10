@@ -9,7 +9,6 @@ import {
   Text,
 } from 'react-native';
 import Svg, { Circle, Path, Text as SvgText } from 'react-native-svg';
-import { LinearGradient } from 'expo-linear-gradient';
 
 const { width: screenWidth } = Dimensions.get('window');
 const wheelSize = Math.min(screenWidth * 0.8, 300);
@@ -20,8 +19,6 @@ interface SynchronizedWheelProps {
   wheelRotation: number;
   onSpin: () => void;
   canSpin: boolean;
-  partnerName?: string;
-  spinnerName?: string;
 }
 
 const SynchronizedWheel: React.FC<SynchronizedWheelProps> = ({
@@ -30,8 +27,6 @@ const SynchronizedWheel: React.FC<SynchronizedWheelProps> = ({
   wheelRotation,
   onSpin,
   canSpin,
-  partnerName,
-  spinnerName,
 }) => {
   const rotationAnim = useRef(new Animated.Value(0)).current;
   const pointerAnim = useRef(new Animated.Value(1)).current;
@@ -146,12 +141,9 @@ const SynchronizedWheel: React.FC<SynchronizedWheelProps> = ({
 
   const getSpinButtonText = () => {
     if (isSpinning) {
-      if (spinnerName && partnerName) {
-        return spinnerName === 'me' ? '🎯 Girando...' : `🎯 ${partnerName} está girando...`;
-      }
       return '🎯 Girando...';
     }
-    return canSpin ? '🎯 Girar Ruleta' : '⏳ Esperando pareja...';
+    return canSpin ? '🎯 Girar Ruleta' : '⏳ Cargando...';
   };
 
   const getSpinButtonStyle = () => {
@@ -213,13 +205,6 @@ const SynchronizedWheel: React.FC<SynchronizedWheelProps> = ({
           {getSpinButtonText()}
         </Text>
       </TouchableOpacity>
-
-      {/* Partner Status */}
-      {partnerName && (
-        <View style={styles.partnerStatus}>
-          <Text style={styles.partnerText}>💕 Con: {partnerName}</Text>
-        </View>
-      )}
     </View>
   );
 };
@@ -286,18 +271,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     textAlign: 'center',
-  },
-  partnerStatus: {
-    marginTop: 20,
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-    borderRadius: 20,
-  },
-  partnerText: {
-    color: '#00D2D3',
-    fontSize: 16,
-    fontWeight: 'bold',
   },
 });
 

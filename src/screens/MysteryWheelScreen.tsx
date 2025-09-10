@@ -5,12 +5,10 @@ import {
   StyleSheet,
   SafeAreaView,
   TouchableOpacity,
-  Alert,
   BackHandler,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { realtimeService, SpinSyncData } from '../services/supabaseRealtime';
 import SynchronizedWheel from '../components/SynchronizedWheel';
 import ResultModal from '../components/ResultModal';
 import FloatingParticles from '../components/FloatingParticles';
@@ -21,104 +19,50 @@ const MysteryWheelScreen = () => {
   const { userName, coupleName } = route.params as any;
 
   // States
-  const [isConnected, setIsConnected] = useState(false);
-  const [partnerName, setPartnerName] = useState<string | null>(null);
   const [isSpinning, setIsSpinning] = useState(false);
   const [wheelRotation, setWheelRotation] = useState(0);
   const [showResult, setShowResult] = useState(false);
   const [currentResult, setCurrentResult] = useState('');
-  const [isMyResult, setIsMyResult] = useState(true);
 
   // Mystery wheel options
   const mysteryOptions = ['🎁', '💎', '🌟', '✨', '🎉', '💫', '🎊', '🎈'];
 
   useEffect(() => {
-    initializeConnection();
-    
     // Handle back button
     const backHandler = BackHandler.addEventListener('hardwareBackPress', handleBackPress);
     
     return () => {
-      realtimeService.disconnect();
       backHandler.remove();
     };
   }, []);
 
-  const initializeConnection = async () => {
-    try {
-      await realtimeService.connectCouple(userName, coupleName);
-      
-      realtimeService.setupRealtimeSubscription(
-        coupleName,
-        userName,
-        handleSpinUpdate,
-        handlePartnerConnect,
-        handlePartnerDisconnect,
-        handleWheelUpdate
-      );
-
-      // Update wheel configuration
-      await realtimeService.updateWheelConfig(coupleName, 'mystery', mysteryOptions);
-      
-    } catch (error) {
-      console.error('Connection error:', error);
-      Alert.alert('Error', 'No se pudo conectar. Inténtalo de nuevo.');
-    }
-  };
-
-  const handleSpinUpdate = (data: SpinSyncData) => {
-    console.log('🎯 Spin update:', data);
-    
-    setIsSpinning(data.isSpinning);
-    setWheelRotation(data.wheelRotation);
-
-    // Show result when spin finishes
-    if (!data.isSpinning && data.result) {
-      setCurrentResult(data.result);
-      setIsMyResult(data.resultForUser === userName);
-      setShowResult(true);
-    }
-  };
-
-  const handlePartnerConnect = (partner: string) => {
-    console.log('👥 Partner connected:', partner);
-    setPartnerName(partner);
-    setIsConnected(true);
-  };
-
-  const handlePartnerDisconnect = () => {
-    console.log('👋 Partner disconnected');
-    setPartnerName(null);
-    setIsConnected(false);
-  };
-
-  const handleWheelUpdate = (wheelType: string, options: any[]) => {
-    console.log('🔄 Wheel updated:', wheelType, options);
-    // Mystery wheel options are fixed, no need to update
-  };
-
   const handleSpin = async () => {
-    if (!isConnected || isSpinning) return;
+    if (isSpinning) return;
     
-    try {
-      const spins = 5 + Math.random() * 5;
-      const targetRotation = spins * 2 * Math.PI + Math.random() * 2 * Math.PI;
+    setIsSpinning(true);
+    
+    // Simulate spinning
+    const spins = 5 + Math.random() * 5;
+    const targetRotation = spins * 2 * Math.PI + Math.random() * 2 * Math.PI;
+    
+    setWheelRotation(targetRotation);
+    
+    // Wait for spin animation to complete
+    setTimeout(() => {
+      setIsSpinning(false);
       
-      await realtimeService.startSynchronizedSpin(
-        coupleName,
-        'mystery',
-        mysteryOptions,
-        targetRotation,
-        userName
-      );
-    } catch (error) {
-      console.error('Spin error:', error);
-      Alert.alert('Error', 'No se pudo girar la ruleta.');
-    }
+      // Calculate result
+      const segmentAngle = (2 * Math.PI) / mysteryOptions.length;
+      const normalizedAngle = (2 * Math.PI - (targetRotation % (2 * Math.PI))) % (2 * Math.PI);
+      const segmentIndex = Math.floor(normalizedAngle / segmentAngle) % mysteryOptions.length;
+      const result = mysteryOptions[segmentIndex];
+      
+      setCurrentResult(result);
+      setShowResult(true);
+    }, 3000);
   };
 
   const handleBackPress = () => {
-    realtimeService.disconnectFromCouple(coupleName, userName);
     navigation.goBack();
     return true;
   };
@@ -129,7 +73,6 @@ const MysteryWheelScreen = () => {
 
   const handleSpinAgain = () => {
     setShowResult(false);
-    // Ready for next spin
   };
 
   return (
@@ -151,22 +94,18 @@ const MysteryWheelScreen = () => {
           <View style={styles.descriptionContainer}>
             <Text style={styles.mysteryTitle}>🎁 Ruleta Misteriosa 🎁</Text>
             <Text style={styles.description}>
-              ¡Las sorpresas se revelan solo al girar! 
-              {isConnected && partnerName && (
-                `\n\n💕 Sincronizada con ${partnerName}`
-              )}
+              ¡Las sorpresas se revelan solo al girar!
+              {'\n\n'}💕 Para: {coupleName}
             </Text>
           </View>
 
-          {/* Synchronized Wheel */}
+          {/* Wheel */}
           <SynchronizedWheel
             options={mysteryOptions}
             isSpinning={isSpinning}
             wheelRotation={wheelRotation}
             onSpin={handleSpin}
-            canSpin={isConnected}
-            partnerName={partnerName || undefined}
-            spinnerName={isSpinning ? 'me' : undefined}
+            canSpin={true}
           />
         </View>
 
@@ -174,8 +113,7 @@ const MysteryWheelScreen = () => {
         <ResultModal
           visible={showResult}
           result={currentResult}
-          isMyResult={isMyResult}
-          partnerName={partnerName || undefined}
+          isMyResult={true}
           onClose={handleCloseResult}
           onSpinAgain={handleSpinAgain}
         />
