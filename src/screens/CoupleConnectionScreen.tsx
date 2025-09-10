@@ -14,7 +14,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 import FloatingParticles from '../components/FloatingParticles';
-import { firebaseService } from '../services/firebaseService';
+import { supabaseService } from '../services/supabaseService';
 
 const CoupleConnectionScreen = () => {
   const navigation = useNavigation();
@@ -43,13 +43,13 @@ const CoupleConnectionScreen = () => {
     try {
       console.log(`👤 Conectando usuario: ${userName} con pareja: ${coupleName}`);
       
-      // Crear o unirse a la sesión usando Firebase
-      const session = await firebaseService.createOrJoinSession(
+      // Crear o unirse a la sesión usando Supabase
+      const session = await supabaseService.createOrJoinSession(
         userName.trim(),
         coupleName.trim()
       );
       
-      console.log('✅ Conexión exitosa con Firebase:', session);
+      console.log('✅ Conexión exitosa con Supabase:', session);
       
       // Navegar a la selección de ruletas
       navigation.navigate('WheelSelection', {
@@ -57,7 +57,7 @@ const CoupleConnectionScreen = () => {
         coupleName: coupleName.trim(),
       });
     } catch (error) {
-      console.error('❌ Error conectando con Firebase:', error);
+      console.error('❌ Error conectando con Supabase:', error);
       Alert.alert('❌ Error', 'Error conectando. Revisa tu conexión e inténtalo de nuevo.');
     } finally {
       setIsConnecting(false);
@@ -134,7 +134,7 @@ const CoupleConnectionScreen = () => {
                   disabled={isConnecting}
                 >
                   <Text style={styles.connectButtonText}>
-                    {isConnecting ? '⏳ Conectando con Firebase...' : '💑 Conectar con mi Pareja'}
+                    {isConnecting ? '⏳ Conectando con Supabase...' : '💑 Conectar con mi Pareja'}
                   </Text>
                 </TouchableOpacity>
               </View>
