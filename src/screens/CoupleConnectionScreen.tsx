@@ -12,7 +12,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import FloatingParticles from '../components/FloatingParticles';
 import { dualDatabaseService } from '../services/dualDatabaseService';
 import { supabaseService } from '../services/supabaseService';
@@ -55,9 +55,11 @@ const CoupleConnectionScreen = () => {
     try {
       console.log(`👤 Connecting user: ${userName} with couple: ${coupleName}`);
       
+      const normalizedCoupleName = coupleName.trim();
+      const user = { username: userName.trim() };
       const session = await dualDatabaseService.joinCoupleSession(normalizedCoupleName, user.username);
       const service = useSupabase ? supabaseService : firebaseService;
-      const session = await service.createOrJoinSession(
+      const session2 = await service.createOrJoinSession(
         userName.trim(),
         coupleName.trim()
       );
@@ -294,7 +296,17 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
     fontSize: 16,
     color: '#FFF',
+  },
   backButton: {
+    position: 'absolute',
+    left: 20,
+    zIndex: 1,
+  },
+  backButtonText: {
+    fontSize: 14,
+    color: '#E30070',
+    fontWeight: '600',
+  },
   databaseInfo: {
     alignItems: 'center',
     marginBottom: 20,
@@ -308,16 +320,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     color: '#E30070',
-  },
-    position: 'absolute',
-    left: 20,
-    zIndex: 1,
-  },
-  backButtonText: {
-    fontSize: 14,
-    color: '#E30070',
-    fontWeight: '600',
-  },
   },
   connectButton: {
     backgroundColor: '#E30070',
@@ -355,6 +357,7 @@ const styles = StyleSheet.create({
     color: '#E30070',
     marginBottom: 15,
     textAlign: 'center',
+  },
   helpList: {
     gap: 12,
   },
