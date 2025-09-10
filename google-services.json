@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "284274670962",
+    "project_id": "ruleta-2b63d",
+    "storage_bucket": "ruleta-2b63d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:284274670962:android:172a668d377b44092431eb",
+        "android_client_info": {
+          "package_name": "com.oscar.ruleta"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCocmySuYU7JP1S77Rg220OnBbwVgiqcUs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
