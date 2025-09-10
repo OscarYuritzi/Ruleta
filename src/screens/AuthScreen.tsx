@@ -14,8 +14,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 import FloatingParticles from '../components/FloatingParticles';
-import { firebaseService } from '../services/firebaseService';
-import { supabaseService } from '../services/supabaseService';
+import { dualDatabaseService } from '../services/dualDatabaseService';
 
 const AuthScreen = () => {
   const navigation = useNavigation();
@@ -25,7 +24,6 @@ const AuthScreen = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [userName, setUserName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [useSupabase, setUseSupabase] = useState(false);
 
   const handleAuth = async () => {
     if (!email.trim() || !password.trim()) {
@@ -46,22 +44,21 @@ const AuthScreen = () => {
     setIsLoading(true);
 
     try {
-      const service = useSupabase ? supabaseService : firebaseService;
+      let user;
       
       if (isLogin) {
         // Login
-        const user = await service.signIn(email.trim(), password);
+        user = await dualDatabaseService.loginUser(email.trim(), password);
         console.log('✅ Login exitoso:', user);
         
         // Navegar a pantalla de conexión de pareja
         navigation.navigate('CoupleConnection' as never, {
           userEmail: email.trim(),
           userName: user.displayName || user.email?.split('@')[0] || 'Usuario',
-          useSupabase,
         } as never);
       } else {
         // Registro
-        const user = await service.signUp(email.trim(), password, userName.trim());
+        user = await dualDatabaseService.registerUser(email.trim(), password, userName.trim());
         console.log('✅ Registro exitoso:', user);
         
         Alert.alert(
@@ -74,7 +71,6 @@ const AuthScreen = () => {
                 navigation.navigate('CoupleConnection' as never, {
                   userEmail: email.trim(),
                   userName: userName.trim(),
-                  useSupabase,
                 } as never);
               }
             }
@@ -199,43 +195,6 @@ const AuthScreen = () => {
                   </View>
                 )}
 
-                {/* Database Selection */}
-                <View style={styles.databaseSelection}>
-                  <Text style={styles.label}>Base de Datos:</Text>
-                  <View style={styles.databaseButtons}>
-                    <TouchableOpacity
-                      style={[
-                        styles.databaseButton,
-                        !useSupabase && styles.databaseButtonActive
-                      ]}
-                      onPress={() => setUseSupabase(false)}
-                      disabled={isLoading}
-                    >
-                      <Text style={[
-                        styles.databaseButtonText,
-                        !useSupabase && styles.databaseButtonTextActive
-                      ]}>
-                        🔥 Firebase
-                      </Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={[
-                        styles.databaseButton,
-                        useSupabase && styles.databaseButtonActive
-                      ]}
-                      onPress={() => setUseSupabase(true)}
-                      disabled={isLoading}
-                    >
-                      <Text style={[
-                        styles.databaseButtonText,
-                        useSupabase && styles.databaseButtonTextActive
-                      ]}>
-                        ⚡ Supabase
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-
                 {/* Auth Button */}
                 <TouchableOpacity
                   style={[styles.authButton, isLoading && styles.authButtonDisabled]}
@@ -249,6 +208,10 @@ const AuthScreen = () => {
                     }
                   </Text>
                 </TouchableOpacity>
+
+                <Text style={styles.syncInfo}>
+                  🔄 Sincronización automática en Firebase y Supabase
+                </Text>
 
                 {/* Switch Auth Mode */}
                 <TouchableOpacity
@@ -371,34 +334,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#FFF',
   },
-  databaseSelection: {
-    marginBottom: 20,
-  },
-  databaseButtons: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-  databaseButton: {
-    flex: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderWidth: 2,
-    borderColor: 'rgba(227, 0, 112, 0.3)',
-    borderRadius: 15,
-    paddingVertical: 12,
-    alignItems: 'center',
-  },
-  databaseButtonActive: {
-    backgroundColor: 'rgba(227, 0, 112, 0.2)',
-    borderColor: '#E30070',
-  },
-  databaseButtonText: {
-    color: '#CCC',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  databaseButtonTextActive: {
-    color: '#E30070',
-  },
   authButton: {
     backgroundColor: '#E30070',
     borderRadius: 25,
@@ -421,6 +356,12 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 18,
     fontWeight: 'bold',
+  },
+  syncInfo: {
+    color: 'rgba(255, 255, 255, 0.7)',
+    textAlign: 'center',
+    marginTop: 15,
+    fontSize: 12,
   },
   switchButton: {
     alignItems: 'center',
