@@ -5,6 +5,7 @@ import {
   StyleSheet,
   SafeAreaView,
   TouchableOpacity,
+  Alert,
   BackHandler,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -19,15 +20,22 @@ const MysteryWheelScreen = () => {
   const { userName, coupleName } = route.params as any;
 
   // States
+  const [isConnected, setIsConnected] = useState(false);
+  const [partnerName, setPartnerName] = useState<string | null>(null);
   const [isSpinning, setIsSpinning] = useState(false);
   const [wheelRotation, setWheelRotation] = useState(0);
   const [showResult, setShowResult] = useState(false);
   const [currentResult, setCurrentResult] = useState('');
+  const [isMyResult, setIsMyResult] = useState(true);
 
   // Mystery wheel options
   const mysteryOptions = ['🎁', '💎', '🌟', '✨', '🎉', '💫', '🎊', '🎈'];
 
   useEffect(() => {
+    // Inicializar sin conexión a Supabase
+    setIsConnected(true); // Simular conexión
+    setPartnerName('Tu pareja'); // Simular pareja conectada
+    
     // Handle back button
     const backHandler = BackHandler.addEventListener('hardwareBackPress', handleBackPress);
     
@@ -36,30 +44,64 @@ const MysteryWheelScreen = () => {
     };
   }, []);
 
-  const handleSpin = async () => {
-    if (isSpinning) return;
+  const handleSpinUpdate = (data: any) => {
+    console.log('🎯 Spin update:', data);
     
-    setIsSpinning(true);
-    
-    // Simulate spinning
-    const spins = 5 + Math.random() * 5;
-    const targetRotation = spins * 2 * Math.PI + Math.random() * 2 * Math.PI;
-    
-    setWheelRotation(targetRotation);
-    
-    // Wait for spin animation to complete
-    setTimeout(() => {
-      setIsSpinning(false);
-      
-      // Calculate result
-      const segmentAngle = (2 * Math.PI) / mysteryOptions.length;
-      const normalizedAngle = (2 * Math.PI - (targetRotation % (2 * Math.PI))) % (2 * Math.PI);
-      const segmentIndex = Math.floor(normalizedAngle / segmentAngle) % mysteryOptions.length;
-      const result = mysteryOptions[segmentIndex];
-      
-      setCurrentResult(result);
+    setIsSpinning(data.isSpinning);
+    setWheelRotation(data.wheelRotation);
+
+    // Show result when spin finishes
+    if (!data.isSpinning && data.result) {
+      setCurrentResult(data.result);
+      setIsMyResult(data.resultForUser === userName);
       setShowResult(true);
-    }, 3000);
+    }
+  };
+
+  const handlePartnerConnect = (partner: string) => {
+    console.log('👥 Partner connected:', partner);
+    setPartnerName(partner);
+    setIsConnected(true);
+  };
+
+  const handlePartnerDisconnect = () => {
+    console.log('👋 Partner disconnected');
+    setPartnerName(null);
+    setIsConnected(false);
+  };
+
+  const handleWheelUpdate = (wheelType: string, options: any[]) => {
+    console.log('🔄 Wheel updated:', wheelType, options);
+    // Mystery wheel options are fixed, no need to update
+  };
+
+  const handleSpin = async () => {
+    if (!isConnected || isSpinning) return;
+    
+    try {
+      setIsSpinning(true);
+      
+      const spins = 5 + Math.random() * 5;
+      const targetRotation = spins * 2 * Math.PI + Math.random() * 2 * Math.PI;
+      
+      setWheelRotation(targetRotation);
+      
+      // Simular resultado después de 3 segundos
+      setTimeout(() => {
+        const segmentAngle = (2 * Math.PI) / mysteryOptions.length;
+        const normalizedAngle = (2 * Math.PI - (targetRotation % (2 * Math.PI))) % (2 * Math.PI);
+        const segmentIndex = Math.floor(normalizedAngle / segmentAngle) % mysteryOptions.length;
+        const result = mysteryOptions[segmentIndex];
+        
+        setIsSpinning(false);
+        setCurrentResult(result);
+        setIsMyResult(true);
+        setShowResult(true);
+      }, 3000);
+    } catch (error) {
+      console.error('Spin error:', error);
+      Alert.alert('Error', 'No se pudo girar la ruleta.');
+    }
   };
 
   const handleBackPress = () => {
@@ -73,6 +115,7 @@ const MysteryWheelScreen = () => {
 
   const handleSpinAgain = () => {
     setShowResult(false);
+    // Ready for next spin
   };
 
   return (
@@ -94,18 +137,22 @@ const MysteryWheelScreen = () => {
           <View style={styles.descriptionContainer}>
             <Text style={styles.mysteryTitle}>🎁 Ruleta Misteriosa 🎁</Text>
             <Text style={styles.description}>
-              ¡Las sorpresas se revelan solo al girar!
-              {'\n\n'}💕 Para: {coupleName}
+              ¡Las sorpresas se revelan solo al girar! 
+              {isConnected && partnerName && (
+                `\n\n💕 Sincronizada con ${partnerName}`
+              )}
             </Text>
           </View>
 
-          {/* Wheel */}
+          {/* Synchronized Wheel */}
           <SynchronizedWheel
             options={mysteryOptions}
             isSpinning={isSpinning}
             wheelRotation={wheelRotation}
             onSpin={handleSpin}
-            canSpin={true}
+            canSpin={isConnected}
+            partnerName={partnerName || undefined}
+            spinnerName={isSpinning ? 'me' : undefined}
           />
         </View>
 
@@ -113,7 +160,8 @@ const MysteryWheelScreen = () => {
         <ResultModal
           visible={showResult}
           result={currentResult}
-          isMyResult={true}
+          isMyResult={isMyResult}
+          partnerName={partnerName || undefined}
           onClose={handleCloseResult}
           onSpinAgain={handleSpinAgain}
         />
